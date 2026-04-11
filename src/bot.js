@@ -14,7 +14,12 @@ const { handleMessage } = require('./handler');
 const PHONE_NUMBER = process.env.BOT_PHONE_NUMBER || '';
 
 let retryCount = 0;
-let isReconnecting = false;
+
+// ==============================
+// FLAG: Sedang menunggu user input pairing code
+// Selama true → JANGAN RECONNECT
+// ==============================
+let waitingForPairing = false;
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -45,23 +50,14 @@ async function connectToWhatsApp() {
     // 🔌 CONNECTION HANDLER
     // ==============================
     socket.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
 
-        console.log("[Connection]", connection);
-
-        // ===== FIX PAIRING (ANTI ERROR) =====
-        if (
-            connection === 'connecting' &&
-            !isRegistered &&
-            !pairingDone &&
-            PHONE_NUMBER
-        ) {
+        // ===== PAIRING CODE (via QR event = WS ready) =====
+        if (qr && !isRegistered && !pairingDone && PHONE_NUMBER) {
             pairingDone = true;
+            waitingForPairing = true; // LOCK: jangan reconnect
 
             try {
-                // ⏳ delay wajib biar socket ready
-                await new Promise(res => setTimeout(res, 4000));
-
                 const code = await socket.requestPairingCode(PHONE_NUMBER);
                 const formatted = code?.match(/.{1,4}/g)?.join("-") || code;
 
@@ -69,10 +65,22 @@ async function connectToWhatsApp() {
                 console.log(`📱 PAIRING CODE`);
                 console.log(`====================================`);
                 console.log(`👉 ${formatted}`);
+                console.log(`====================================`);
+                console.log(`⏳ Masukkan kode di atas ke WhatsApp.`);
+                console.log(`   Anda punya waktu 60 detik.`);
                 console.log(`====================================\n`);
+
+                // Auto-unlock setelah 60 detik (kode expired)
+                setTimeout(() => {
+                    if (waitingForPairing) {
+                        console.log("[!] Waktu pairing habis. Restart bot: node index.js");
+                        process.exit(1);
+                    }
+                }, 60000);
 
             } catch (err) {
                 console.error("[Pairing Error]", err.message);
+                waitingForPairing = false;
             }
         }
 
@@ -80,7 +88,12 @@ async function connectToWhatsApp() {
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
 
-            console.log(`[!] Disconnect code: ${statusCode}`);
+            // Jika sedang menunggu pairing → JANGAN reconnect
+            // Biarkan user punya waktu memasukkan kode
+            if (waitingForPairing) {
+                console.log(`[!] Disconnect (${statusCode}) — Tapi pairing sedang berlangsung, menunggu...`);
+                return; // JANGAN reconnect!
+            }
 
             if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 console.log("[!] Session logout. Hapus auth...");
@@ -88,16 +101,11 @@ async function connectToWhatsApp() {
                 process.exit(1);
             }
 
-            if (isReconnecting) return;
-            isReconnecting = true;
-
             retryCount++;
             const delay = Math.min(retryCount * 5000, 30000);
-
-            console.log(`[!] Reconnect dalam ${delay / 1000}s`);
+            console.log(`[!] Disconnect (${statusCode}). Reconnect dalam ${delay / 1000}s...`);
 
             setTimeout(() => {
-                isReconnecting = false;
                 connectToWhatsApp();
             }, delay);
         }
@@ -105,6 +113,7 @@ async function connectToWhatsApp() {
         // ===== CONNECTED =====
         if (connection === 'open') {
             retryCount = 0;
+            waitingForPairing = false; // UNLOCK
             console.log("✅ WhatsApp Connected & Ready!");
         }
     });
@@ -122,38 +131,34 @@ async function connectToWhatsApp() {
             const jid = msg.key.remoteJid;
             if (!jid) return;
 
-            // ===== FILTER =====
+            // Filter
             if (msg.key.fromMe) return;
             if (jid === 'status@broadcast') return;
             if (jid.endsWith('@g.us')) return;
             if (jid.includes('@newsletter')) return;
 
-            // ===== AMBIL TEXT =====
-            const messageContent = msg.message;
-
+            // Ambil text
+            const mc = msg.message;
             let text =
-                messageContent.conversation ||
-                messageContent.extendedTextMessage?.text ||
-                messageContent.imageMessage?.caption ||
-                messageContent.videoMessage?.caption ||
+                mc.conversation ||
+                mc.extendedTextMessage?.text ||
+                mc.imageMessage?.caption ||
+                mc.videoMessage?.caption ||
                 "";
 
             if (!text.trim()) return;
 
             console.log(`\n📥 ${jid}: ${text}`);
 
-            // ===== PROCESS =====
+            // Typing indicator
+            await socket.sendPresenceUpdate('composing', jid);
+
+            // Process
             const reply = await handleMessage(text.trim(), jid);
 
             if (reply) {
-                await delay(500); // anti spam
-
-                await socket.sendMessage(
-                    jid,
-                    { text: reply },
-                    { quoted: msg }
-                );
-
+                await new Promise(r => setTimeout(r, 500)); // anti-spam delay
+                await socket.sendMessage(jid, { text: reply }, { quoted: msg });
                 console.log(`📤 ${reply.substring(0, 80)}${reply.length > 80 ? '...' : ''}`);
             }
 
@@ -161,13 +166,6 @@ async function connectToWhatsApp() {
             console.error("[Message Error]", err.message);
         }
     });
-}
-
-// ==============================
-// ⏱️ DELAY FUNCTION
-// ==============================
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 module.exports = { connectToWhatsApp };
