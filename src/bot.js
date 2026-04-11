@@ -7,6 +7,9 @@ const readline = require('readline');
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
+// Simpan nomor telepon agar tidak perlu input ulang saat reconnect
+let savedPhoneNumber = null;
+
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
 
@@ -17,34 +20,38 @@ async function connectToWhatsApp() {
     browser: ["Ubuntu", "Chrome", "20.0.04"]
   });
 
-  // ====== Pairing Code (untuk VPS tanpa GUI) ======
-  if (!socket.authState.creds.registered) {
-    setTimeout(async () => {
-      console.log("\n[!!!] SESSION BELUM ADA [!!!]");
-      let phoneNumber = await question("[?] Masukkan nomor WhatsApp untuk dijadikan Bot (Contoh: 628123456789): ");
-      phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
-
-      let code = await socket.requestPairingCode(phoneNumber);
-      code = code?.match(/.{1,4}/g)?.join("-") || code;
-
-      console.log(`\n=============================================================`);
-      console.log(`📱 1. Buka WhatsApp → Pengaturan → Perangkat Tertaut`);
-      console.log(`📱 2. Pilih "Tautkan dengan nomor telepon saja"`);
-      console.log(`📱 3. MASUKKAN KODE INI: \x1b[32m${code}\x1b[0m`);
-      console.log(`=============================================================\n`);
-    }, 3000);
-  }
-
   // ====== Connection Events ======
-  socket.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect } = update;
+  socket.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    // Ketika QR muncul = WebSocket sudah connected, saatnya minta Pairing Code
+    if (qr && !socket.authState.creds.registered) {
+      try {
+        if (!savedPhoneNumber) {
+          console.log("\n[!!!] SESSION BELUM ADA [!!!]");
+          savedPhoneNumber = await question("[?] Masukkan nomor WhatsApp Bot (Contoh: 628123456789): ");
+          savedPhoneNumber = savedPhoneNumber.replace(/[^0-9]/g, '');
+        }
+
+        let code = await socket.requestPairingCode(savedPhoneNumber);
+        code = code?.match(/.{1,4}/g)?.join("-") || code;
+
+        console.log(`\n=============================================================`);
+        console.log(`📱 1. Buka WhatsApp → Pengaturan → Perangkat Tertaut`);
+        console.log(`📱 2. Pilih "Tautkan dengan nomor telepon saja"`);
+        console.log(`📱 3. MASUKKAN KODE INI: \x1b[32m${code}\x1b[0m`);
+        console.log(`=============================================================\n`);
+      } catch (err) {
+        console.error("[Pairing Error]", err.message);
+      }
+    }
 
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
       console.log(`[!] Koneksi terputus (code: ${statusCode}). Reconnect: ${shouldReconnect}`);
       if (shouldReconnect) {
-        setTimeout(connectToWhatsApp, 3000); // Tunggu 3 detik sebelum reconnect
+        setTimeout(connectToWhatsApp, 3000);
       } else {
         console.log("[!] Terlogout. Hapus folder auth_info_baileys dan jalankan ulang.");
       }
@@ -60,12 +67,12 @@ async function connectToWhatsApp() {
     const msg = m.messages[0];
     if (!msg?.message) return;
 
-    // --- Filter: Abaikan pesan sendiri, broadcast, dan GRUP ---
+    // Filter: Abaikan pesan sendiri, broadcast, dan GRUP
     if (msg.key.fromMe) return;
     if (msg.key.remoteJid === 'status@broadcast') return;
-    if (msg.key.remoteJid.endsWith('@g.us')) return; // GRUP → abaikan
+    if (msg.key.remoteJid.endsWith('@g.us')) return;
 
-    // --- Ekstrak teks ---
+    // Ekstrak teks
     const messageContent = msg.message;
     let text = messageContent.conversation
       || messageContent.extendedTextMessage?.text
@@ -78,7 +85,6 @@ async function connectToWhatsApp() {
     const senderNumber = msg.key.remoteJid;
     console.log(`\n[📥] ${senderNumber}: ${text}`);
 
-    // Status "sedang mengetik..."
     await socket.sendPresenceUpdate('composing', senderNumber);
 
     try {
