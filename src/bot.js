@@ -21,7 +21,7 @@ async function connectToWhatsApp() {
     const isRegistered = state.creds?.registered || false;
 
     if (!isRegistered && !PHONE_NUMBER) {
-        console.error("[ERROR] BOT_PHONE_NUMBER belum diisi di .env");
+        console.error("[ERROR] Isi BOT_PHONE_NUMBER di .env");
         process.exit(1);
     }
 
@@ -36,8 +36,7 @@ async function connectToWhatsApp() {
         logger,
         browser: ["Ubuntu", "Chrome", "22.04"],
         connectTimeoutMs: 60000,
-        markOnlineOnConnect: true,
-        generateHighQualityLinkPreview: false
+        markOnlineOnConnect: true
     });
 
     let pairingDone = false;
@@ -48,29 +47,40 @@ async function connectToWhatsApp() {
     socket.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
 
-        // ===== Pairing Code =====
-        if (!isRegistered && !pairingDone && PHONE_NUMBER) {
+        console.log("[Connection]", connection);
+
+        // ===== FIX PAIRING (ANTI ERROR) =====
+        if (
+            connection === 'connecting' &&
+            !isRegistered &&
+            !pairingDone &&
+            PHONE_NUMBER
+        ) {
             pairingDone = true;
 
             try {
+                // ⏳ delay wajib biar socket ready
+                await new Promise(res => setTimeout(res, 4000));
+
                 const code = await socket.requestPairingCode(PHONE_NUMBER);
                 const formatted = code?.match(/.{1,4}/g)?.join("-") || code;
 
                 console.log(`\n====================================`);
                 console.log(`📱 PAIRING CODE`);
                 console.log(`====================================`);
-                console.log(`Masukkan kode ini di WhatsApp:`);
                 console.log(`👉 ${formatted}`);
                 console.log(`====================================\n`);
+
             } catch (err) {
                 console.error("[Pairing Error]", err.message);
-                process.exit(1);
             }
         }
 
-        // ===== Disconnect =====
+        // ===== DISCONNECT HANDLER =====
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
+
+            console.log(`[!] Disconnect code: ${statusCode}`);
 
             if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 console.log("[!] Session logout. Hapus auth...");
@@ -84,7 +94,7 @@ async function connectToWhatsApp() {
             retryCount++;
             const delay = Math.min(retryCount * 5000, 30000);
 
-            console.log(`[!] Disconnect (code: ${statusCode}) → retry ${delay / 1000}s`);
+            console.log(`[!] Reconnect dalam ${delay / 1000}s`);
 
             setTimeout(() => {
                 isReconnecting = false;
@@ -92,10 +102,10 @@ async function connectToWhatsApp() {
             }, delay);
         }
 
-        // ===== Connected =====
+        // ===== CONNECTED =====
         if (connection === 'open') {
             retryCount = 0;
-            console.log("✅ WhatsApp Connected");
+            console.log("✅ WhatsApp Connected & Ready!");
         }
     });
 
@@ -110,15 +120,15 @@ async function connectToWhatsApp() {
             if (!msg?.message) return;
 
             const jid = msg.key.remoteJid;
+            if (!jid) return;
 
             // ===== FILTER =====
             if (msg.key.fromMe) return;
-            if (!jid) return;
             if (jid === 'status@broadcast') return;
             if (jid.endsWith('@g.us')) return;
             if (jid.includes('@newsletter')) return;
 
-            // ===== EXTRACT TEXT =====
+            // ===== AMBIL TEXT =====
             const messageContent = msg.message;
 
             let text =
@@ -132,14 +142,17 @@ async function connectToWhatsApp() {
 
             console.log(`\n📥 ${jid}: ${text}`);
 
-            // ===== HANDLE MESSAGE =====
+            // ===== PROCESS =====
             const reply = await handleMessage(text.trim(), jid);
 
             if (reply) {
-                // delay anti spam
-                await delay(500);
+                await delay(500); // anti spam
 
-                await socket.sendMessage(jid, { text: reply }, { quoted: msg });
+                await socket.sendMessage(
+                    jid,
+                    { text: reply },
+                    { quoted: msg }
+                );
 
                 console.log(`📤 ${reply.substring(0, 80)}${reply.length > 80 ? '...' : ''}`);
             }
@@ -151,7 +164,7 @@ async function connectToWhatsApp() {
 }
 
 // ==============================
-// ⏱️ HELPER DELAY
+// ⏱️ DELAY FUNCTION
 // ==============================
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
