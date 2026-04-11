@@ -66,6 +66,7 @@ docker run -d \
   -p 3000:3000 \
   -e WAHA_WEBHOOK_ENDPOINT=http://host.docker.internal:3001/webhook \
   -e WAHA_WEBHOOK_EVENTS="message" \
+  -e WAHA_API_KEY=losmen123 \
   --add-host=host.docker.internal:host-gateway \
   --restart always \
   devlikeapro/waha

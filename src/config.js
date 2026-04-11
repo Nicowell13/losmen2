@@ -18,7 +18,8 @@ module.exports = {
   // WAHA Endpoint
   waha: {
     url: process.env.WAHA_URL || 'http://localhost:3000',
-    session: process.env.WAHA_SESSION || 'default'
+    session: process.env.WAHA_SESSION || 'default',
+    apiKey: process.env.WAHA_API_KEY || ''
   },
 
   // Redis Queue

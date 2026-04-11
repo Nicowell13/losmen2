@@ -14,8 +14,11 @@ async function sendReply(to, text) {
       chatId: to,
       text: text
     };
+
+    const headers = {};
+    if (config.waha.apiKey) headers['X-Api-Key'] = config.waha.apiKey;
     
-    await axios.post(wahaUrl, payload);
+    await axios.post(wahaUrl, payload, { headers });
     console.log(`[📤 WhatsApp] Pesan terkirim ke ${to}`);
   } catch (error) {
     console.error(`[❌ WAHA Send Error] Gagal kirim ke ${to}:`, error.message);
@@ -34,8 +37,11 @@ async function sendPresence(to) {
       chatId: to,
       presence: "composing"
     };
+
+    const headers = {};
+    if (config.waha.apiKey) headers['X-Api-Key'] = config.waha.apiKey;
     
-    await axios.post(wahaUrl, payload);
+    await axios.post(wahaUrl, payload, { headers });
   } catch (error) {
     // Abaikan jika error presence karena tidak vital
   }
