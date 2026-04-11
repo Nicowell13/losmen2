@@ -102,8 +102,17 @@ async function connectToWhatsApp() {
             }
 
             retryCount++;
-            const delay = Math.min(retryCount * 5000, 30000);
-            console.log(`[!] Disconnect (${statusCode}). Reconnect dalam ${delay / 1000}s...`);
+
+            // Maksimal 3 kali retry lalu berhenti (hindari rate limit WhatsApp)
+            if (retryCount > 3) {
+                console.log("[!] Gagal konek 3x. WhatsApp kemungkinan blokir sementara IP ini.");
+                console.log("[!] Tunggu 15 menit, lalu jalankan ulang: node index.js");
+                process.exit(1);
+            }
+
+            // Delay PANJANG: 30s → 60s → 120s
+            const delay = retryCount * 30000;
+            console.log(`[!] Disconnect (${statusCode}). Retry ${retryCount}/3 dalam ${delay / 1000}s...`);
 
             setTimeout(() => {
                 connectToWhatsApp();
