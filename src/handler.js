@@ -4,6 +4,7 @@ const config = require('./config');
 
 // ============================================================
 // Anti-Spam: Cooldown 3 detik per user
+// (Catatan: ini tetap di-memory Node.js sebagai front-defense ringan)
 // ============================================================
 const userCooldowns = new Map();
 const COOLDOWN_MS = 3000;
@@ -16,45 +17,12 @@ function isSpamming(userPhone) {
   return false;
 }
 
-// Bersihkan map setiap 10 menit agar tidak memory leak
 setInterval(() => userCooldowns.clear(), 10 * 60 * 1000);
-
-// ============================================================
-// Antrian Pesan: Proses satu per satu agar Ollama tidak overload
-// ============================================================
-let isProcessing = false;
-const messageQueue = [];
-
-async function enqueueMessage(userText, userPhone) {
-  return new Promise((resolve) => {
-    messageQueue.push({ userText, userPhone, resolve });
-    processQueue();
-  });
-}
-
-async function processQueue() {
-  if (isProcessing || messageQueue.length === 0) return;
-  isProcessing = true;
-
-  const { userText, userPhone, resolve } = messageQueue.shift();
-  try {
-    const reply = await _handleMessage(userText, userPhone);
-    resolve(reply);
-  } catch (err) {
-    console.error("[Queue Error]", err.message);
-    resolve("Mohon maaf Kak, terjadi gangguan. Silakan coba lagi ya 🙏");
-  }
-
-  isProcessing = false;
-  processQueue(); // Lanjut ke pesan berikutnya
-}
 
 // ============================================================
 // Greeting: Simpan user yang sudah pernah chat
 // ============================================================
 const greetedUsers = new Set();
-
-// Bersihkan set setiap 24 jam
 setInterval(() => greetedUsers.clear(), 24 * 60 * 60 * 1000);
 
 // ============================================================
@@ -68,16 +36,12 @@ function isDiluarJamOperasional() {
 }
 
 // ============================================================
-// Handler Utama (DIPANGGIL DARI bot.js)
+// Logic Utama Pemroses Pesan (Dipanggil oleh Queue / Redis Worker)
 // ============================================================
-
-/**
- * Entry point publik — dengan anti-spam + antrian.
- */
-async function handleMessage(userText, userPhone) {
+async function processMessageLogic(userText, userPhone) {
   // Cek anti-spam
   if (isSpamming(userPhone)) {
-    return null; // Abaikan tanpa balas
+    return null; // Abaikan spam
   }
 
   // Cek jam operasional
@@ -85,34 +49,23 @@ async function handleMessage(userText, userPhone) {
     return `Halo Kak 🙏 Terima kasih sudah menghubungi ${config.losmen.name}.\nSaat ini admin sedang istirahat (jam operasional ${config.operasional.jamBuka}:00 - ${config.operasional.jamTutup}:00 WIB).\nPesan Kakak akan kami balas besok pagi ya! 😊`;
   }
 
-  // Masukkan ke antrian
-  return enqueueMessage(userText, userPhone);
-}
-
-/**
- * Logic utama hybrid — dipanggil dari antrian.
- */
-async function _handleMessage(userText, userPhone) {
   const startTime = Date.now();
 
   // --- Greeting untuk tamu baru ---
   if (!greetedUsers.has(userPhone)) {
     greetedUsers.add(userPhone);
-    const losmenName = config.losmen.name;
-    // Cek apakah pesan pertama juga ada pertanyaan, jika hanya sapaan → kirim greeting saja
     const intent = await llm.detectIntent(userText);
     if (intent === 'greeting') {
       console.log(`[Handler] Tamu baru (${userPhone}) → Greeting (${Date.now() - startTime}ms)`);
-      return `Halo Kak! 😊 Selamat datang di *${losmenName}*.\nAda yang bisa kami bantu? Kakak bisa tanya tentang:\n\n📋 *Ketersediaan* kamar\n💰 *Harga* kamar\n📍 *Lokasi* kami\n🏨 *Fasilitas* yang ada\n\nSilakan langsung ketik pertanyaannya ya! 🙏`;
+      return `Halo Kak! 😊 Selamat datang di *${config.losmen.name}*.\nAda yang bisa kami bantu? Kakak bisa tanya tentang:\n\n📋 *Ketersediaan* kamar\n💰 *Harga* kamar\n📍 *Lokasi* kami\n🏨 *Fasilitas* yang ada\n\nSilakan langsung ketik pertanyaannya ya! 🙏`;
     }
-    // Jika bukan greeting murni, lanjut proses seperti biasa
   }
 
   // 1. Deteksi Intent
   const intent = await llm.detectIntent(userText);
   console.log(`[Handler] Intent: ${intent} (${Date.now() - startTime}ms)`);
 
-  // 2. Ambil Data dari Cache
+  // 2. Ambil Data dari Cache Sheets
   let contextData = [];
 
   switch (intent) {
@@ -126,7 +79,6 @@ async function _handleMessage(userText, userPhone) {
       break;
 
     case 'faq_fasilitas':
-      // Gabungkan fasilitas dari semua tipe kamar
       const allRooms = sheets.getAvailabilityData();
       contextData = allRooms.map(k => `- ${k.tipe}: ${k.fasilitas}`).join('\n');
       break;
@@ -137,22 +89,21 @@ async function _handleMessage(userText, userPhone) {
       break;
 
     case 'greeting':
-      // Sudah di-handle di atas, ini fallback
       return `Halo Kak! 😊 Ada yang bisa dibantu? Silakan tanya soal harga, ketersediaan, atau lokasi kami ya!`;
 
     default:
       contextData = [];
   }
 
-  // 3. Generate Respons Natural
+  // 3. Generate Respons Natural dengan LLM
   const replyText = await llm.generateResponse(intent, userText, contextData);
 
   const totalTime = Date.now() - startTime;
-  console.log(`[Handler] Dibalas dalam ${totalTime}ms`);
+  console.log(`[Handler] Selesai proses (${totalTime}ms) untuk: ${userPhone}`);
 
   return replyText;
 }
 
 module.exports = {
-  handleMessage
+  processMessageLogic
 };

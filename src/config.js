@@ -15,6 +15,17 @@ module.exports = {
     jamTutup: parseInt(process.env.JAM_TUTUP) || 23
   },
 
+  // WAHA Endpoint
+  waha: {
+    url: process.env.WAHA_URL || 'http://localhost:3000',
+    session: process.env.WAHA_SESSION || 'default'
+  },
+
+  // Redis Queue
+  redis: {
+    url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
+  },
+
   // Ollama
   ollama: {
     url: process.env.OLLAMA_URL || 'http://localhost:11434',
