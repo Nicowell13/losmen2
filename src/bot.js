@@ -1,13 +1,11 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const { handleMessage } = require('./handler');
 const fs = require('fs');
-const config = require('./config');
 
-// Nomor telepon dari .env — TIDAK PAKAI INPUT TERMINAL
+// Nomor telepon dari .env
 const PHONE_NUMBER = process.env.BOT_PHONE_NUMBER || '';
 
-// Hitung retry untuk backoff (hindari rate limit WhatsApp)
 let retryCount = 0;
 
 async function connectToWhatsApp() {
@@ -16,21 +14,26 @@ async function connectToWhatsApp() {
 
   if (!isRegistered && !PHONE_NUMBER) {
     console.error("[ERROR] BOT_PHONE_NUMBER belum diisi di file .env!");
-    console.error("[ERROR] Contoh: BOT_PHONE_NUMBER=628123456789");
     process.exit(1);
   }
 
   if (!isRegistered) {
-    console.log(`[Info] Session belum ada. Akan pairing dengan nomor: ${PHONE_NUMBER}`);
+    console.log(`[Info] Session belum ada. Akan pairing dengan: ${PHONE_NUMBER}`);
   }
 
+  const logger = pino({ level: "silent" });
+
   const socket = makeWASocket({
-    auth: state,
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, logger)
+    },
     printQRInTerminal: false,
-    logger: pino({ level: "error" }),
-    browser: Browsers.ubuntu("Chrome"),
+    logger: logger,
+    browser: ["Ubuntu", "Chrome", "22.04"],
     connectTimeoutMs: 60000,
-    defaultQueryTimeoutMs: 0 // Disable query timeout
+    generateHighQualityLinkPreview: false,
+    markOnlineOnConnect: true
   });
 
   let pairingDone = false;
@@ -39,12 +42,9 @@ async function connectToWhatsApp() {
   socket.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
-    // QR muncul = WebSocket sudah siap → langsung minta pairing code
+    // QR muncul = WebSocket ready → langsung minta pairing code
     if (qr && !isRegistered && !pairingDone && PHONE_NUMBER) {
       pairingDone = true;
-
-      // Delay kecil untuk memastikan koneksi stabil
-      await new Promise(r => setTimeout(r, 2000));
 
       try {
         const code = await socket.requestPairingCode(PHONE_NUMBER);
@@ -58,10 +58,10 @@ async function connectToWhatsApp() {
         console.log(`📱 3. Pilih "Tautkan dengan nomor telepon saja"`);
         console.log(`📱 4. MASUKKAN KODE: \x1b[32m${formatted}\x1b[0m`);
         console.log(`=============================================================`);
-        console.log(`⏳ Menunggu scan... (kode berlaku beberapa menit)\n`);
+        console.log(`⏳ Menunggu Anda memasukkan kode di WhatsApp...\n`);
       } catch (err) {
         console.error(`[Pairing Error] ${err.message}`);
-        console.log("[Info] Tunggu 30 detik lalu coba ulang: node index.js");
+        console.log("[Info] Tunggu 1-2 menit lalu coba: node index.js");
         process.exit(1);
       }
     }
@@ -70,12 +70,11 @@ async function connectToWhatsApp() {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
 
       if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-        console.log("[!] Session logout/invalid. Menghapus auth...");
+        console.log("[!] Session logout. Menghapus auth...");
         fs.rmSync('auth_info_baileys', { recursive: true, force: true });
         process.exit(1);
       }
 
-      // Backoff: tunggu lebih lama setiap kali gagal (maks 30 detik)
       retryCount++;
       const delay = Math.min(retryCount * 5000, 30000);
       console.log(`[!] Koneksi terputus (code: ${statusCode}). Retry #${retryCount} dalam ${delay / 1000}s...`);
@@ -83,7 +82,7 @@ async function connectToWhatsApp() {
     }
 
     if (connection === 'open') {
-      retryCount = 0; // Reset retry counter
+      retryCount = 0;
       console.log('✅ Bot WhatsApp tersambung dan siap menerima pesan!');
     }
   });
@@ -94,10 +93,9 @@ async function connectToWhatsApp() {
   socket.ev.on('messages.upsert', async (m) => {
     const msg = m.messages[0];
     if (!msg?.message) return;
-
     if (msg.key.fromMe) return;
     if (msg.key.remoteJid === 'status@broadcast') return;
-    if (msg.key.remoteJid.endsWith('@g.us')) return; // Abaikan grup
+    if (msg.key.remoteJid.endsWith('@g.us')) return;
 
     const messageContent = msg.message;
     let text = messageContent.conversation
