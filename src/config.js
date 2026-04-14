@@ -31,7 +31,7 @@ module.exports = {
   ollama: {
     url: process.env.OLLAMA_URL || 'http://localhost:11434',
     model: process.env.LLM_MODEL || 'phi3:mini',
-    timeout: 25000 // 25 detik maks, jika lewat → fallback
+    timeout: 60000 // 60 detik maks untuk phi3 yang lebih besar
   },
 
   // Google Sheets
