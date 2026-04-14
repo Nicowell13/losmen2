@@ -41,9 +41,10 @@ async function detectIntent(userText) {
   const keywordMap = {
     tanya_harga: ['harga', 'berapa', 'tarif', 'biaya', 'rate', 'price', 'murah', 'mahal', 'diskon', 'promo'],
     tanya_ketersediaan: ['kosong', 'available', 'tersedia', 'ada kamar', 'booking', 'pesan kamar', 'book', 'sedia', 'penuh'],
+    booking: ['booking', 'pesan', 'reservasi', 'book', 'daftar', 'form', 'check in', 'checkin', 'mau kamar', 'ambil kamar', 'mau nginap', 'mau menginap'],
     faq_lokasi: ['lokasi', 'alamat', 'dimana', 'di mana', 'maps', 'arah', 'jalan ke', 'posisi'],
     faq_fasilitas: ['fasilitas', 'ac', 'wifi', 'parkir', 'sarapan', 'breakfast', 'kolam', 'facility'],
-    faq_checkin: ['check in', 'checkin', 'check out', 'checkout', 'jam masuk', 'jam keluar'],
+    faq_checkin: ['jam masuk', 'jam keluar', 'checkout', 'check out'],
     greeting: ['halo', 'hai', 'hi', 'hello', 'selamat pagi', 'selamat siang', 'selamat sore', 'selamat malam', 'assalamualaikum', 'permisi', 'pagi', 'siang', 'sore', 'malam']
   };
 
@@ -56,7 +57,7 @@ async function detectIntent(userText) {
   // ====== TAHAP 2: LLM Fallback (Jika keyword tidak cocok) ======
   const systemPrompt = `Anda adalah NLU AI untuk sistem penginapan/losmen.
 Tugas: deteksi intent dari pesan user.
-Pilih SATU dari: tanya_harga, tanya_ketersediaan, faq_lokasi, faq_fasilitas, faq_checkin, greeting, lainnya.
+Pilih SATU dari: tanya_harga, tanya_ketersediaan, booking, faq_lokasi, faq_fasilitas, faq_checkin, greeting, lainnya.
 Balas hanya satu kata intent saja, tanpa penjelasan.`;
 
   const prompt = `Pesan: "${userText}"\nIntent:`;
@@ -65,7 +66,7 @@ Balas hanya satu kata intent saja, tanpa penjelasan.`;
   if (!response) return "lainnya";
 
   const cleanResponse = response.trim().toLowerCase().replace(/[^a-z_]/g, '');
-  const validIntents = ["tanya_harga", "tanya_ketersediaan", "faq_lokasi", "faq_fasilitas", "faq_checkin", "greeting", "lainnya"];
+  const validIntents = ["tanya_harga", "tanya_ketersediaan", "booking", "faq_lokasi", "faq_fasilitas", "faq_checkin", "greeting", "lainnya"];
 
   return validIntents.includes(cleanResponse) ? cleanResponse : "lainnya";
 }
@@ -76,14 +77,21 @@ Balas hanya satu kata intent saja, tanpa penjelasan.`;
 async function generateResponse(intent, userText, dataContext) {
   const losmenName = config.losmen.name;
 
-  const systemPrompt = `Anda adalah Customer Service WhatsApp "${losmenName}" (penginapan/losmen).
-Jawab pertanyaan tamu dengan ramah, hangat, dan natural ala CS Indonesia.
+  const csName = config.losmen.csName || 'Sari';
+
+  const systemPrompt = `Kamu adalah ${csName}, Customer Service WhatsApp di "${losmenName}" (penginapan/losmen).
+Kamu seorang wanita berusia 25 tahun yang ramah, sopan, dan persuasif.
+Karakter kamu: hangat, ceria, suka pakai bahasa casual tapi tetap sopan, seperti ngobrol sama teman.
+
 Aturan:
-1. JANGAN pernah bilang Anda AI/robot/bot. Anda adalah admin manusia.
-2. Jawab SINGKAT, maksimal 2-3 kalimat saja seperti chat WA biasa.
-3. Gunakan emoji secukupnya (jangan berlebihan).
-4. Jika data tersedia, sertakan informasi spesifik dari [DATA].
-5. Akhiri dengan kalimat ajakan/pertanyaan balik agar tamu tetap engaged.`;
+1. JANGAN pernah bilang kamu AI/robot/bot. Kamu adalah ${csName}, admin manusia.
+2. Jawab SINGKAT, maksimal 2-3 kalimat seperti chat WA biasa.
+3. Pakai emoji secukupnya, jangan berlebihan.
+4. Gunakan sapaan "Kak" atau "Kakak" untuk menyapa tamu.
+5. Jika data tersedia, sertakan info spesifik dari [DATA].
+6. Selalu persuasif — ajak tamu untuk booking/menginap dengan cara halus.
+7. Akhiri dengan pertanyaan balik agar tamu tetap engaged.
+8. Tanda tangani dengan "- ${csName} 💛" di akhir pesan.`;
 
   let dataString = "";
 

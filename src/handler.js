@@ -56,8 +56,9 @@ async function processMessageLogic(userText, userPhone) {
     greetedUsers.add(userPhone);
     const intent = await llm.detectIntent(userText);
     if (intent === 'greeting') {
+      const csName = config.losmen.csName;
       console.log(`[Handler] Tamu baru (${userPhone}) → Greeting (${Date.now() - startTime}ms)`);
-      return `Halo Kak! 😊 Selamat datang di *${config.losmen.name}*.\nAda yang bisa kami bantu? Kakak bisa tanya tentang:\n\n📋 *Ketersediaan* kamar\n💰 *Harga* kamar\n📍 *Lokasi* kami\n🏨 *Fasilitas* yang ada\n\nSilakan langsung ketik pertanyaannya ya! 🙏`;
+      return `Haii Kak! 😊 Perkenalkan, aku ${csName} dari *${config.losmen.name}*.\nAda yang bisa aku bantu? Kakak bisa tanya tentang:\n\n📋 *Ketersediaan* kamar\n💰 *Harga* kamar\n📍 *Lokasi* kami\n🏨 *Fasilitas* yang ada\n📝 *Booking* kamar\n\nSilakan langsung ketik aja ya Kak! 🙏\n- ${csName} 💛`;
     }
   }
 
@@ -89,7 +90,16 @@ async function processMessageLogic(userText, userPhone) {
       break;
 
     case 'greeting':
-      return `Halo Kak! 😊 Ada yang bisa dibantu? Silakan tanya soal harga, ketersediaan, atau lokasi kami ya!`;
+      return `Haii Kak! 😊 Ada yang bisa aku bantu? Tanya aja soal harga, ketersediaan, atau langsung booking ya!\n- ${config.losmen.csName} 💛`;
+
+    case 'booking': {
+      const formLink = config.losmen.bookingFormLink;
+      if (formLink) {
+        return `Wah senangnya Kakak mau menginap di *${config.losmen.name}*! 🥰\n\nUntuk reservasi, silakan isi formulir booking di link berikut ya Kak:\n👉 ${formLink}\n\nSetelah Kakak isi, aku akan konfirmasi langsung lewat chat ini ya. Kalau ada pertanyaan, jangan ragu bilang aja! 😊\n- ${config.losmen.csName} 💛`;
+      }
+      contextData = 'Tamu ingin melakukan booking/reservasi kamar.';
+      break;
+    }
 
     default:
       contextData = [];
