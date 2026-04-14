@@ -106,8 +106,8 @@ fi
 sudo systemctl enable ollama 2>/dev/null || true
 sudo systemctl start ollama 2>/dev/null || true
 sleep 5
-echo "  Pulling qwen2.5:1.5b..."
-ollama pull qwen2.5:1.5b
+echo "  Pulling phi3:mini..."
+ollama pull phi3:mini
 
 # =====================================================
 # 6. Install Dependencies
