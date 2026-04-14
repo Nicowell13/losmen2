@@ -3,7 +3,7 @@ const config = require('./config');
 
 /**
  * Panggil Ollama dengan timeout protection.
- * Jika Ollama mati/hang, akan return null setelah 15 detik (bukan hang selamanya).
+ * Jika Ollama mati/hang, akan return null setelah 25 detik (bukan hang selamanya).
  */
 async function callOllama(prompt, system, temperature = 0.3) {
   try {
@@ -17,7 +17,7 @@ async function callOllama(prompt, system, temperature = 0.3) {
         num_predict: 150 // Batasi output agar cepat (max ~150 token)
       }
     }, {
-      timeout: config.ollama.timeout // 15 detik timeout
+      timeout: config.ollama.timeout // 25 detik timeout
     });
     return res.data.response;
   } catch (error) {
