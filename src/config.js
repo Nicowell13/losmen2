@@ -33,7 +33,7 @@ module.exports = {
   ollama: {
     url: process.env.OLLAMA_URL || 'http://localhost:11434',
     model: process.env.LLM_MODEL || 'qwen2.5:1.5b',
-    timeout: 30000 // 30 detik — qwen 1.5b lebih cepat dari phi3
+    timeout: 120000 // 120 detik — untuk mengakomodasi prompt history yang lebih panjang
   },
 
   // PostgreSQL Database

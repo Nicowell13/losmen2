@@ -137,13 +137,16 @@ ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
   const response = await callOllama(prompt, systemPrompt, 0.2); // Turunkan temperature jadi 0.2 agar tidak halusinasi
 
   if (!response) {
-    // Fallback statis per intent jika LLM mati
+    // Fallback statis per intent jika LLM mati atau timeout
     const fallbacks = {
-      tanya_harga: `Untuk info harga terbaru, silakan hubungi kami langsung ya Kak di ${config.losmen.phone} 🙏`,
-      tanya_ketersediaan: `Mohon maaf Kak, untuk cek ketersediaan bisa langsung hubungi kami di ${config.losmen.phone} ya 🙏`,
+      tanya_harga: `Untuk info harga dan tipe kamar terbaru, silakan cek form booking kami atau hubungi admin di ${config.losmen.phone} 🙏`,
+      tanya_ketersediaan: `Mohon maaf Kak, untuk cek ketersediaan kamar secara pasti bisa langsung hubungi kami di ${config.losmen.phone} ya 🙏`,
+      booking: `Wah, mau pesan kamar Kak? Silakan langsung isi formulir booking di link berikut ya: ${config.losmen.bookingFormLink || 'Silakan hubungi admin.'} 😊`,
       faq_lokasi: `${losmenName} berlokasi di ${config.losmen.address}. Maps: ${config.losmen.mapsLink} 📍`,
-      greeting: `Halo Kak! Selamat datang di ${losmenName} 😊 Ada yang bisa kami bantu?`,
-      default: `Mohon maaf Kak, admin sedang tidak bisa membalas otomatis. Silakan coba lagi nanti ya 🙏`
+      faq_fasilitas: `Fasilitas kami lengkap Kak! Ada AC, kamar mandi dalam, air panas, WiFi, dan parkir. Tertarik untuk booking? 😊`,
+      faq_checkin: `Waktu check-in standar kami mulai jam 14:00 dan check-out maksimal jam 12:00 siang Kak. ⏰`,
+      greeting: `Halo Kak! Selamat datang di ${losmenName} 😊 Ada yang bisa kami bantu hari ini?`,
+      default: `Mohon maaf Kak, sistem AI kami sedang lambat. Untuk bantuan cepat, silakan hubungi admin di ${config.losmen.phone} 🙏`
     };
     return fallbacks[intent] || fallbacks.default;
   }

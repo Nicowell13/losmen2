@@ -7,7 +7,7 @@ const config = require('./config');
 const conversations = new Map();
 const closeTimers = new Map();
 
-const MAX_MESSAGES = 10;        // Maksimal 10 pesan dalam memory
+const MAX_MESSAGES = 4;        // Maksimal 4 pesan dalam memory (mengurangi beban konteks LLM)
 const CLOSE_TIMEOUT = 5 * 60 * 1000; // 5 menit
 const CLEANUP_INTERVAL = 30 * 60 * 1000; // Bersihkan memory setiap 30 menit
 
