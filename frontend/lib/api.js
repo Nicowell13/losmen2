@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = ''; // Proxy via Vercel rewrites (next.config.mjs)
 
 /**
  * Wrapper untuk fetch API dengan JWT token otomatis.
