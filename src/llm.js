@@ -2,8 +2,8 @@ const axios = require('axios');
 const config = require('./config');
 
 /**
- * Panggil Ollama dengan timeout protection.
- * Jika Ollama mati/hang, akan return null setelah 25 detik (bukan hang selamanya).
+ * Panggil Ollama (Qwen 2.5 1.5B) dengan timeout protection.
+ * Jika Ollama mati/hang, akan return null setelah timeout (bukan hang selamanya).
  */
 async function callOllama(prompt, system, temperature = 0.3) {
   try {
@@ -14,7 +14,7 @@ async function callOllama(prompt, system, temperature = 0.3) {
       stream: false,
       options: {
         temperature: temperature,
-        num_predict: 200 // Naikkan sedikit untuk jawaban ketersediaan yang lebih detail
+        num_predict: 200 // Qwen 1.5B lebih efisien, bisa sedikit lebih panjang
       }
     }, {
       timeout: config.ollama.timeout // 25 detik timeout
@@ -40,28 +40,13 @@ async function detectIntent(userText) {
   // ====== TAHAP 1: Keyword Matching (Instan, 0ms) ======
   const keywordMap = {
     tanya_harga: ['harga', 'berapa', 'tarif', 'biaya', 'rate', 'price', 'murah', 'mahal', 'diskon', 'promo'],
-    tanya_ketersediaan: ['kosong', 'available', 'tersedia', 'ada kamar', 'booking', 'pesan kamar', 'book',
-      'sedia', 'penuh', 'tanggal', 'besok', 'lusa', 'minggu depan', 'hari ini',
-      'check in', 'checkin', 'cek in', 'kapan', 'jadwal'],
-    booking: ['booking', 'pesan', 'reservasi', 'book', 'daftar', 'form', 'mau kamar', 'ambil kamar', 'mau nginap', 'mau menginap'],
+    tanya_ketersediaan: ['kosong', 'available', 'tersedia', 'ada kamar', 'booking', 'pesan kamar', 'book', 'sedia', 'penuh'],
+    booking: ['booking', 'pesan', 'reservasi', 'book', 'daftar', 'form', 'check in', 'checkin', 'mau kamar', 'ambil kamar', 'mau nginap', 'mau menginap'],
     faq_lokasi: ['lokasi', 'alamat', 'dimana', 'di mana', 'maps', 'arah', 'jalan ke', 'posisi'],
     faq_fasilitas: ['fasilitas', 'ac', 'wifi', 'parkir', 'sarapan', 'breakfast', 'kolam', 'facility'],
     faq_checkin: ['jam masuk', 'jam keluar', 'checkout', 'check out'],
     greeting: ['halo', 'hai', 'hi', 'hello', 'selamat pagi', 'selamat siang', 'selamat sore', 'selamat malam', 'assalamualaikum', 'permisi', 'pagi', 'siang', 'sore', 'malam']
   };
-
-  // Prioritas: Jika ada kata kunci tanggal + booking, anggap tanya_ketersediaan
-  const dateKeywords = ['tanggal', 'besok', 'lusa', 'hari ini', 'minggu depan', 'kapan'];
-  const hasDateKeyword = dateKeywords.some(kw => text.includes(kw));
-
-  if (hasDateKeyword) {
-    // Cek apakah membahas ketersediaan atau booking
-    const bookingWords = ['booking', 'pesan', 'reservasi', 'book', 'mau nginap', 'mau menginap'];
-    if (bookingWords.some(kw => text.includes(kw))) {
-      return 'booking';
-    }
-    return 'tanya_ketersediaan';
-  }
 
   for (const [intent, keywords] of Object.entries(keywordMap)) {
     if (keywords.some(kw => text.includes(kw))) {
@@ -98,14 +83,14 @@ async function generateResponse(intent, userText, dataContext) {
 Kamu wanita 25 tahun yang ramah, sopan, dan persuasif. Bahasa casual tapi sopan.
 
 ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
-1. Jawab MAKSIMAL 4-5 kalimat. Terlalu panjang akan ditolak.
-2. JIKA ADA [DATA KAMAR], [DATA], atau [KETERSEDIAAN], JANGAN MENGARANG HARGA/KETERSEDIAAN/TANGGAL. Sebutkan harga, status, dan tanggal persis sesuai data yang diberikan!
-3. Jika ada data ketersediaan per tanggal, sebutkan tanggalnya dan kamar mana yang kosong/penuh.
-4. Jika ditanya ketersediaan tapi ada kamar yang PENUH, sampaikan maaf untuk tipe tersebut lalu tawarkan tipe lain yang tersedia.
-5. Jika semua kamar PENUH pada tanggal tersebut, sampaikan maaf dan sarankan tanggal lain.
-6. Jika ada [LINK BOOKING], bagikan link tersebut ke tamu.
-7. Akhiri dengan pertanyaan persuasif (contoh: "Mau booking di tanggal berapa Kak?").
-8. Tanda tangani dengan "- ${csName} 💛" di baris baru paling bawah.`;
+1. Jawab MAKSIMAL 3-4 kalimat. Terlalu panjang akan ditolak.
+2. JIKA ADA [DATA KAMAR] ATAU [DATA], JANGAN MENGARANG HARGA/KETERSEDIAAN. Sebutkan harga dan status persis sama dengan data yang diberikan!
+3. Jika ditanya ketersediaan tapi ada kamar yang PENUH, sampaikan maaf untuk tipe tersebut lalu tawarkan tipe lain yang tersedia.
+4. Akhiri dengan pertanyaan persuasif (contoh: "Mau booking di tanggal berapa Kak?").
+5. Tanda tangani dengan "- ${csName} 💛" di baris baru paling bawah.
+6. Selalu persuasif — ajak tamu untuk booking/menginap dengan cara halus.
+7. Akhiri dengan pertanyaan balik agar tamu tetap engaged.
+8. Tanda tangani dengan "- ${csName} 💛" di akhir pesan.`;
 
   let dataString = "";
 
@@ -118,7 +103,7 @@ ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
       }
     }).join('\n');
   } else if (typeof dataContext === 'string') {
-    dataString = dataContext;
+    dataString = "[DATA]\n" + dataContext;
   }
 
   const prompt = `${dataString ? dataString + '\n\n' : ''}Tamu: "${userText}"\nBalasan ${csName}:`;

@@ -1,20 +1,20 @@
 #!/bin/bash
 # =====================================================
-# VPS Ubuntu 22.04 Setup Script — WAHA + Webhook Bot
+# VPS Ubuntu 22.04 Setup Script — WAHA + Webhook Bot + PostgreSQL
 # Run as root: chmod +x setup-vps.sh && ./setup-vps.sh
 # =====================================================
 
 set -e
 
 echo "=================================================="
-echo "  🏨 Setup VPS Hybrid WA Bot (Node.js + WAHA + Ollama)"
+echo "  🏨 Setup VPS Hybrid WA Bot (Node.js + WAHA + Ollama + PostgreSQL)"
 echo "=================================================="
 
 # =====================================================
 # 0. SWAP RAM (4GB)
 # =====================================================
 echo ""
-echo "[0/6] Membuat Swap 4GB..."
+echo "[0/7] Membuat Swap 4GB..."
 if [ -f /swapfile ]; then
     echo "  → Swapfile sudah ada, skip."
 else
@@ -33,7 +33,7 @@ free -h
 # 1. Update Ubuntu & Install Base Tools + Redis
 # =====================================================
 echo ""
-echo "[1/6] Update paket Ubuntu & Install Redis..."
+echo "[1/7] Update paket Ubuntu & Install Redis..."
 export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update -y
 sudo apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
@@ -43,10 +43,32 @@ sudo systemctl enable redis-server
 sudo systemctl start redis-server
 
 # =====================================================
-# 2. Install Docker & Run WAHA
+# 2. Install PostgreSQL
 # =====================================================
 echo ""
-echo "[2/6] Install Docker & WAHA Server..."
+echo "[2/7] Install PostgreSQL..."
+if command -v psql &> /dev/null; then
+    echo "  → PostgreSQL sudah terinstall: $(psql --version)"
+else
+    sudo apt-get install -y postgresql postgresql-contrib
+fi
+
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+
+# Buat user & database untuk losmen
+echo "  → Membuat database losmen_db..."
+sudo -u postgres psql -c "CREATE USER losmen WITH PASSWORD 'losmen123';" 2>/dev/null || echo "  → User losmen sudah ada."
+sudo -u postgres psql -c "CREATE DATABASE losmen_db OWNER losmen;" 2>/dev/null || echo "  → Database losmen_db sudah ada."
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE losmen_db TO losmen;" 2>/dev/null || true
+
+echo "  ✅ PostgreSQL siap! (losmen_db)"
+
+# =====================================================
+# 3. Install Docker & Run WAHA
+# =====================================================
+echo ""
+echo "[3/7] Install Docker & WAHA Server..."
 if command -v docker &> /dev/null; then
     echo "  → Docker sudah terinstall: $(docker --version)"
 else
@@ -74,10 +96,10 @@ docker run -d \
 echo "  ✅ WAHA berjalan di Docker!"
 
 # =====================================================
-# 3. Install Node.js 20 LTS
+# 4. Install Node.js 20 LTS
 # =====================================================
 echo ""
-echo "[3/6] Install Node.js 20 LTS..."
+echo "[4/7] Install Node.js 20 LTS..."
 if command -v node &> /dev/null; then
     echo "  → Node.js sudah terinstall."
 else
@@ -86,44 +108,47 @@ else
 fi
 
 # =====================================================
-# 4. Install PM2
+# 5. Install PM2
 # =====================================================
 echo ""
-echo "[4/6] Install PM2..."
+echo "[5/7] Install PM2..."
 if ! command -v pm2 &> /dev/null; then
     sudo npm install -g pm2
 fi
 pm2 startup systemd -u root --hp /root 2>/dev/null || true
 
 # =====================================================
-# 5. Install Ollama + Model
+# 6. Install Ollama + Qwen 2.5 1.5B
 # =====================================================
 echo ""
-echo "[5/6] Install Ollama..."
+echo "[6/7] Install Ollama + Qwen 2.5 1.5B..."
 if ! command -v ollama &> /dev/null; then
     curl -fsSL https://ollama.com/install.sh | sh
 fi
 sudo systemctl enable ollama 2>/dev/null || true
 sudo systemctl start ollama 2>/dev/null || true
 sleep 5
-echo "  Pulling phi3:mini..."
-ollama pull phi3:mini
+echo "  Pulling qwen2.5:1.5b (ringan ~1GB, cocok untuk VPS 4-core 8GB)..."
+ollama pull qwen2.5:1.5b
 
 # =====================================================
-# 6. Install Dependencies
+# 7. Install Dependencies
 # =====================================================
 echo ""
 if [ -f "package.json" ]; then
-    echo "[6/6] Install NPM dependencies..."
+    echo "[7/7] Install NPM dependencies..."
     npm install
 fi
 
 echo ""
 echo "=================================================="
-echo "  ✅ SETUP VPS (WAHA) SELESAI!"
+echo "  ✅ SETUP VPS SELESAI!"
 echo "=================================================="
 echo "  1. Buka browser: http://$(curl -s ifconfig.me):3000"
-echo "  2. Di tab Sessions, tambahkan session baru bernama: default"
-echo "  3. Klik ikon kamera untuk Scan QR Code (Gunakan WA HP Anda)"
-echo "  4. Di VPS Terminal jalankan bot NLU Node.js: pm2 start index.js --name cs-losmen"
+echo "  2. Di tab Sessions, tambahkan session baru: default"
+echo "  3. Scan QR Code dengan WA HP Anda"
+echo "  4. Jalankan bot: pm2 start index.js --name cs-losmen"
+echo ""
+echo "  📊 Admin Panel API: http://$(curl -s ifconfig.me):3001/api/"
+echo "  🔑 Login default: admin / losmen123"
 echo "=================================================="

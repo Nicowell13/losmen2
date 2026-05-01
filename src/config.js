@@ -29,17 +29,26 @@ module.exports = {
     url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
   },
 
-  // Ollama
+  // Ollama (Qwen 2.5 1.5B)
   ollama: {
     url: process.env.OLLAMA_URL || 'http://localhost:11434',
-    model: process.env.LLM_MODEL || 'phi3:mini',
-    timeout: 60000 // 60 detik maks untuk phi3 yang lebih besar
+    model: process.env.LLM_MODEL || 'qwen2.5:1.5b',
+    timeout: 30000 // 30 detik — qwen 1.5b lebih cepat dari phi3
   },
 
-  // Google Sheets
-  sheets: {
-    clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    privateKey: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : '',
-    sheetId: process.env.GOOGLE_SHEET_ID
+  // PostgreSQL Database
+  database: {
+    url: process.env.DATABASE_URL || 'postgresql://losmen:losmen123@localhost:5432/losmen_db'
+  },
+
+  // JWT Authentication
+  jwt: {
+    secret: process.env.JWT_SECRET || 'losmen-jwt-secret-2026',
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+  },
+
+  // CORS
+  cors: {
+    origin: process.env.CORS_ORIGIN || '*'
   }
 };

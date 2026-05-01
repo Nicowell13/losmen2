@@ -1,5 +1,5 @@
 const llm = require('./llm');
-const sheets = require('./sheets');
+const sheets = require('./db'); // PostgreSQL (same interface as old sheets.js)
 const config = require('./config');
 
 // ============================================================

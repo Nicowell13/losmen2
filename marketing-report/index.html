@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Solusi AI Chatbot WhatsApp — Losmen Bahagia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a1a2e;
+      --accent: #e94560;
+      --accent2: #0f3460;
+      --gold: #f5a623;
+      --green: #27ae60;
+      --bg: #ffffff;
+      --text: #2c3e50;
+      --text-light: #7f8c8d;
+      --border: #ecf0f1;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* ===== PRINT OPTIMIZATION ===== */
+    @media print {
+      body { font-size: 11pt; }
+      .page-break { page-break-before: always; }
+      .no-print { display: none !important; }
+      section { page-break-inside: avoid; }
+      .hero { min-height: auto !important; padding: 40pt 30pt !important; }
+      .content-wrapper { padding: 20pt 30pt !important; }
+      @page {
+        size: A4;
+        margin: 0;
+      }
+    }
+
+    /* ===== PDF BUTTON ===== */
+    .print-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, var(--accent), #c0392b);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(233,69,96,0.4);
+      z-index: 999;
+      transition: transform 0.2s;
+      font-family: inherit;
+    }
+    .print-btn:hover { transform: translateY(-2px) scale(1.05); }
+
+    /* ===== HERO / COVER PAGE ===== */
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(233,69,96,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(245,166,35,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(233,69,96,0.2);
+      border: 1px solid rgba(233,69,96,0.4);
+      color: #ff6b81;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      max-width: 700px;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, #f5a623, #e94560);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: rgba(255,255,255,0.7);
+      max-width: 550px;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-stat {
+      text-align: left;
+    }
+
+    .hero-stat-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f5a623, #e94560);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-stat-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 500;
+    }
+
+    .hero-footer {
+      position: absolute;
+      bottom: 40px;
+      left: 80px;
+      right: 80px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(255,255,255,0.4);
+      font-size: 13px;
+    }
+
+    .hero-logo {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      color: white;
+    }
+
+    /* ===== CONTENT SECTIONS ===== */
+    .content-wrapper {
+      padding: 60px 80px;
+      max-width: 100%;
+    }
+
+    .section-label {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent), #c0392b);
+      color: white;
+      padding: 4px 14px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .section-subtitle {
+      font-size: 16px;
+      color: var(--text-light);
+      margin-bottom: 36px;
+      max-width: 600px;
+    }
+
+    /* ===== PROBLEM STATEMENT ===== */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .problem-card {
+      background: #fef5f5;
+      border: 1px solid #fde2e2;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .problem-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .problem-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #c0392b;
+    }
+
+    .problem-card p {
+      font-size: 13px;
+      color: #7f8c8d;
+      line-height: 1.5;
+    }
+
+    /* ===== SOLUTION FEATURES ===== */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card {
+      background: linear-gradient(135deg, #f8f9fa, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      transition: transform 0.2s;
+    }
+
+    .feature-card:hover { transform: translateY(-3px); }
+
+    .feature-emoji {
+      font-size: 32px;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .feature-card h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-light);
+      line-height: 1.6;
+    }
+
+    /* ===== COST COMPARISON TABLE ===== */
+    .comparison-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      margin-bottom: 30px;
+    }
+
+    .comparison-table thead th {
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      color: white;
+      padding: 16px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      letter-spacing: 0.5px;
+    }
+
+    .comparison-table thead th:first-child {
+      width: 30%;
+    }
+
+    .comparison-table thead th.highlight {
+      background: linear-gradient(135deg, #e94560, #c0392b);
+      text-align: center;
+    }
+
+    .comparison-table tbody td {
+      padding: 14px 20px;
+      font-size: 13px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: middle;
+    }
+
+    .comparison-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table tbody tr:nth-child(even) {
+      background: #fafbfc;
+    }
+
+    .comparison-table td.highlight {
+      background: rgba(233,69,96,0.04) !important;
+      text-align: center;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .comparison-table td:not(:first-child):not(.highlight) {
+      text-align: center;
+      color: var(--text-light);
+    }
+
+    .comparison-table .total-row {
+      background: #1a1a2e !important;
+      color: white;
+      font-weight: 700;
+    }
+
+    .comparison-table .total-row td {
+      color: white;
+      border-bottom: none;
+      padding: 18px 20px;
+      font-size: 15px;
+    }
+
+    .comparison-table .total-row td.highlight {
+      background: var(--accent) !important;
+      color: white;
+      font-size: 18px;
+    }
+
+    .badge-hemat {
+      display: inline-block;
+      background: #27ae60;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-mahal {
+      display: inline-block;
+      background: #e74c3c;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ===== SAVINGS CALLOUT ===== */
+    .savings-box {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-radius: 16px;
+      padding: 40px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 30px 0;
+    }
+
+    .savings-left h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .savings-left p {
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+    }
+
+    .savings-right {
+      text-align: center;
+    }
+
+    .savings-amount {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f5a623, #e94560);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .savings-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ===== ARCHITECTURE SECTION ===== */
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 20px 0 30px;
+      flex-wrap: wrap;
+    }
+
+    .arch-node {
+      background: linear-gradient(135deg, #f8f9fa, #fff);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      text-align: center;
+      min-width: 140px;
+    }
+
+    .arch-node.primary {
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      border-color: transparent;
+      color: white;
+    }
+
+    .arch-node.accent {
+      background: linear-gradient(135deg, #e94560, #c0392b);
+      border-color: transparent;
+      color: white;
+    }
+
+    .arch-node-emoji { font-size: 28px; margin-bottom: 6px; display: block; }
+
+    .arch-node-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .arch-node-sub {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .arch-arrow {
+      font-size: 24px;
+      color: var(--text-light);
+      margin: 0 8px;
+    }
+
+    /* ===== ROI SECTION ===== */
+    .roi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .roi-card {
+      text-align: center;
+      background: linear-gradient(135deg, #f8f9fa, #fff);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 16px;
+    }
+
+    .roi-card .roi-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .roi-card .roi-label {
+      font-size: 12px;
+      color: var(--text-light);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== WHY US / BREAKDOWN ===== */
+    .breakdown-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      margin: 20px 0;
+    }
+
+    .breakdown-table th {
+      background: var(--primary);
+      color: white;
+      padding: 14px 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .breakdown-table td {
+      padding: 14px 20px;
+      font-size: 13px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .breakdown-table tr:nth-child(even) { background: #fafbfc; }
+    .breakdown-table tr:last-child td { border-bottom: none; }
+
+    .breakdown-table .cost-value {
+      font-weight: 700;
+      color: var(--primary);
+      text-align: right;
+    }
+
+    .breakdown-table tfoot td {
+      background: linear-gradient(135deg, var(--accent), #c0392b);
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 16px 20px;
+      border: none;
+    }
+
+    /* ===== TESTIMONIAL / SCENARIO ===== */
+    .scenario-box {
+      background: #f0faf4;
+      border: 1px solid #d5f5e3;
+      border-radius: 14px;
+      padding: 30px;
+      margin: 20px 0;
+    }
+
+    .scenario-box h4 {
+      color: #27ae60;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .chat-bubble {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: flex-start;
+    }
+
+    .chat-bubble-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .chat-bubble-avatar.user { background: #dfe6e9; }
+    .chat-bubble-avatar.bot { background: #d5f5e3; }
+
+    .chat-bubble-msg {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 80%;
+      color: var(--text);
+    }
+
+    .chat-bubble-msg.bot-msg {
+      background: #dcf8e8;
+      border-color: #c8f0d4;
+    }
+
+    .chat-bubble-msg .chat-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+
+    /* ===== CTA / FOOTER ===== */
+    .cta-section {
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      color: white;
+      padding: 60px 80px;
+      text-align: center;
+    }
+
+    .cta-section h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .cta-section p {
+      color: rgba(255,255,255,0.6);
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+
+    .cta-contact {
+      display: inline-flex;
+      gap: 30px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 20px 40px;
+    }
+
+    .cta-item {
+      text-align: center;
+    }
+
+    .cta-item-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+    }
+
+    .cta-item-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .doc-footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 11px;
+      color: var(--text-light);
+    }
+
+    /* ===== HIGHLIGHT BOX ===== */
+    .highlight-box {
+      background: linear-gradient(135deg, #fffbf0, #fff8e7);
+      border: 1px solid #f5d89a;
+      border-left: 4px solid var(--gold);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 20px 0;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .highlight-box strong {
+      color: var(--primary);
+    }
+
+    /* ===== CHECK LIST ===== */
+    .check-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+
+    .check-list li {
+      padding: 8px 0;
+      padding-left: 30px;
+      position: relative;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .check-list li::before {
+      content: '✅';
+      position: absolute;
+      left: 0;
+      top: 8px;
+    }
+
+    /* ===== DIVIDER ===== */
+    .divider {
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      border-radius: 2px;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PRINT BUTTON (hidden when printing) -->
+  <button class="print-btn no-print" onclick="window.print()">📄 Simpan sebagai PDF</button>
+
+  <!-- ===== PAGE 1: COVER ===== -->
+  <section class="hero">
+    <div class="hero-badge">Proposal Teknologi 2026</div>
+    <h1>AI Chatbot WhatsApp<br>untuk <span>Bisnis Penginapan</span></h1>
+    <p class="hero-sub">
+      Solusi customer service otomatis 24 jam dengan AI cerdas, 
+      cek ketersediaan real-time, dan biaya operasional mulai dari 
+      <strong>Rp 228.000/bulan</strong> — hingga 95% lebih hemat dari solusi enterprise.
+    </p>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">Rp 228rb</div>
+        <div class="hero-stat-label">Biaya / Bulan</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">24/7</div>
+        <div class="hero-stat-label">Aktif Non-Stop</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">&lt;3 dtk</div>
+        <div class="hero-stat-label">Respon Rata-rata</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">0</div>
+        <div class="hero-stat-label">Karyawan Tambahan</div>
+      </div>
+    </div>
+
+    <div class="hero-footer">
+      <div class="hero-logo">🏨 Losmen Bahagia Tech</div>
+      <div>Dokumen Konfidensial — April 2026</div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 2: MASALAH ===== -->
+  <section class="content-wrapper page-break">
+    <div class="section-label">Latar Belakang</div>
+    <h2 class="section-title">Tantangan Customer Service Penginapan</h2>
+    <p class="section-subtitle">Setiap bisnis penginapan menghadapi masalah yang sama — dan biaya tersembunyi yang sering terlewat.</p>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon">⏰</div>
+        <div>
+          <h4>Respons Lambat = Tamu Kabur</h4>
+          <p>78% calon tamu memilih penginapan yang membalas WhatsApp paling cepat. Jika Anda membalas dalam 1 jam, kemungkinan besar tamu sudah booking di tempat lain.</p>
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">💸</div>
+        <div>
+          <h4>Biaya CS Manual Tinggi</h4>
+          <p>Gaji 1 CS minimal Rp 2.5 - 4 juta/bulan, hanya bisa kerja 8 jam/hari, dan butuh libur. Belum termasuk training, turnover, dan human error.</p>
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">🌙</div>
+        <div>
+          <h4>Pesan Malam Hari Terabaikan</h4>
+          <p>40% pesan masuk terjadi di luar jam kerja (malam/dini hari). Tanpa bot, pesan ini baru dibalas keesokan hari — terlambat.</p>
+        </div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">🔁</div>
+        <div>
+          <h4>Pertanyaan Repetitif</h4>
+          <p>80% pesan bertanya hal yang sama: harga, ketersediaan, lokasi, fasilitas. CS harus copy-paste jawaban berulang kali setiap hari.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <strong>💡 Fakta:</strong> Bisnis penginapan kecil-menengah kehilangan rata-rata <strong>15-30 calon tamu per bulan</strong> hanya karena lambat membalas WhatsApp. Dengan asumsi harga kamar Rp 200.000/malam, itu potensi kerugian <strong>Rp 3-6 juta/bulan</strong>.
+    </div>
+  </section>
+
+  <!-- ===== PAGE 3: SOLUSI ===== -->
+  <section class="content-wrapper page-break">
+    <div class="section-label">Solusi Kami</div>
+    <h2 class="section-title">AI Chatbot WhatsApp Cerdas</h2>
+    <p class="section-subtitle">Bot yang menjawab seperti CS sungguhan — ramah, sopan, dan akurat berdasarkan data real-time.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-emoji">🤖</span>
+        <h4>AI Natural Language</h4>
+        <p>Memahami bahasa sehari-hari. Tamu bisa bertanya "ada kamar kosong besok?" dan bot langsung cek data ketersediaan secara otomatis.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-emoji">📅</span>
+        <h4>Cek Ketersediaan Real-Time</h4>
+        <p>Bot otomatis cek data booking per tanggal. Bisa deteksi "besok", "tanggal 20 April", "hari Sabtu" — dan jawab kamar mana yang kosong/penuh.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-emoji">💰</span>
+        <h4>Info Harga Akurat</h4>
+        <p>Harga diambil langsung dari database. Tidak ada salah sebut harga. Update harga cukup dari Google Sheets di HP Anda.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-emoji">⚡</span>
+        <h4>Respon Instan &lt;3 Detik</h4>
+        <p>Bot mengirim pesan "mohon ditunggu" dalam &lt;1 detik, lalu jawaban lengkap menyusul. Tamu merasa dilayani langsung.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-emoji">🔒</span>
+        <h4>Anti-Spam Otomatis</h4>
+        <p>Cooldown 3 detik per user, filter grup & broadcast, dan throttling otomatis. Bot tidak bisa diabuse oleh spammer.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-emoji">📊</span>
+        <h4>Dashboard Google Sheets</h4>
+        <p>Owner cukup update ketersediaan & harga dari Google Sheets di HP. Tidak perlu coding apapun. Tersinkronisasi otomatis tiap 5 menit.</p>
+      </div>
+    </div>
+
+    <!-- Chat Demo -->
+    <div class="scenario-box">
+      <h4>💬 Contoh Percakapan Bot</h4>
+      <div class="chat-bubble">
+        <div class="chat-bubble-avatar user">👤</div>
+        <div class="chat-bubble-msg">
+          <div class="chat-label">Calon Tamu</div>
+          ada kamar kosong besok kak?
+        </div>
+      </div>
+      <div class="chat-bubble">
+        <div class="chat-bubble-avatar bot">🤖</div>
+        <div class="chat-bubble-msg bot-msg">
+          <div class="chat-label">Bot AI (Sari) — &lt;1 detik</div>
+          Baik Kak, tunggu sebentar ya aku cek dulu 🔍
+        </div>
+      </div>
+      <div class="chat-bubble">
+        <div class="chat-bubble-avatar bot">🤖</div>
+        <div class="chat-bubble-msg bot-msg">
+          <div class="chat-label">Bot AI (Sari) — 2-3 detik kemudian</div>
+          Haii Kak! 😊 Untuk besok tanggal 16/04, kamar Standard masih tersedia 2 kamar ya (Rp 150.000/malam) dan VIP tersedia 1 kamar (Rp 350.000/malam). Sayangnya kamar Deluxe sudah penuh 🙏<br><br>Mau booking di tipe yang mana Kak?<br>- Sari 💛
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 4: ARSITEKTUR ===== -->
+  <section class="content-wrapper page-break">
+    <div class="section-label">Teknologi</div>
+    <h2 class="section-title">Arsitektur Sistem</h2>
+    <p class="section-subtitle">Infrastruktur kelas enterprise dengan biaya UKM.</p>
+
+    <div class="arch-flow">
+      <div class="arch-node">
+        <span class="arch-node-emoji">📱</span>
+        <div class="arch-node-title">Tamu WhatsApp</div>
+        <div class="arch-node-sub">Kirim pesan</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node primary">
+        <span class="arch-node-emoji">🐳</span>
+        <div class="arch-node-title">WAHA Server</div>
+        <div class="arch-node-sub">WhatsApp Gateway</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node primary">
+        <span class="arch-node-emoji">🔴</span>
+        <div class="arch-node-title">Redis Queue</div>
+        <div class="arch-node-sub">Antrian Pesan</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node accent">
+        <span class="arch-node-emoji">🧠</span>
+        <div class="arch-node-title">AI Engine</div>
+        <div class="arch-node-sub">NLU + NLG</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <span class="arch-node-emoji">📊</span>
+        <div class="arch-node-title">Google Sheets</div>
+        <div class="arch-node-sub">Data Kamar + Booking</div>
+      </div>
+    </div>
+
+    <ul class="check-list">
+      <li><strong>VPS Cloud</strong> — Server berjalan 24/7 di cloud (DigitalOcean/AWS). Uptime 99.9%.</li>
+      <li><strong>Message Queue (Redis)</strong> — Pesan tidak pernah hilang walau server sibuk. Diproses satu-per-satu secara berurutan.</li>
+      <li><strong>AI Hybrid</strong> — Keyword matching untuk pertanyaan umum (&lt;1ms), LLM AI untuk pertanyaan kompleks. Hemat resource dan biaya.</li>
+      <li><strong>Google Sheets sebagai Database</strong> — Pemilik tinggal buka HP → edit Google Sheet → data bot otomatis update dalam 5 menit.</li>
+      <li><strong>Data Booking Real-Time</strong> — Sheet 3 berisi data Check In / Check Out. Bot otomatis hitung kamar tersedia per tanggal.</li>
+      <li><strong>Fallback Cerdas</strong> — Jika AI down, bot tetap bisa jawab dengan template statis. Tamu tetap terlayani.</li>
+    </ul>
+  </section>
+
+  <!-- ===== PAGE 5: PERBANDINGAN BIAYA ===== -->
+  <section class="content-wrapper page-break">
+    <div class="section-label">Perbandingan Biaya</div>
+    <h2 class="section-title">Mengapa Solusi Ini Paling Efisien?</h2>
+    <p class="section-subtitle">Perbandingan biaya bulanan antara solusi kami vs alternatif lain di pasaran.</p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Komponen</th>
+          <th class="highlight">✨ Solusi Kami</th>
+          <th>CS Manual (1 Orang)</th>
+          <th>SaaS Chatbot (WATI/Respond.io)</th>
+          <th>Custom Agency</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Server / Hosting</strong></td>
+          <td class="highlight">Rp 100.000</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Rp 300.000+</td>
+        </tr>
+        <tr>
+          <td><strong>WhatsApp Gateway</strong></td>
+          <td class="highlight">Rp 0 <span class="badge-hemat">GRATIS</span></td>
+          <td>—</td>
+          <td>Rp 500.000+</td>
+          <td>Rp 500.000+</td>
+        </tr>
+        <tr>
+          <td><strong>AI / Chatbot Engine</strong></td>
+          <td class="highlight">Rp 5.000</td>
+          <td>—</td>
+          <td>Termasuk paket</td>
+          <td>Rp 500.000+</td>
+        </tr>
+        <tr>
+          <td><strong>Gaji Karyawan</strong></td>
+          <td class="highlight">Rp 0</td>
+          <td><strong>Rp 3.000.000+</strong></td>
+          <td>Rp 0</td>
+          <td>Rp 0</td>
+        </tr>
+        <tr>
+          <td><strong>Platform / Lisensi</strong></td>
+          <td class="highlight">Rp 0</td>
+          <td>Rp 0</td>
+          <td><strong>Rp 800.000+</strong></td>
+          <td>Rp 1.500.000+</td>
+        </tr>
+        <tr>
+          <td><strong>Maintenance / Support</strong></td>
+          <td class="highlight">Rp 123.000</td>
+          <td>Rp 0</td>
+          <td>Termasuk</td>
+          <td>Rp 500.000+</td>
+        </tr>
+        <tr>
+          <td><strong>Jam Operasional</strong></td>
+          <td class="highlight">24 Jam / 7 Hari ✅</td>
+          <td>8 Jam / 6 Hari</td>
+          <td>24/7 ✅</td>
+          <td>24/7 ✅</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td><strong>TOTAL / BULAN</strong></td>
+          <td class="highlight">Rp 228.000</td>
+          <td style="text-align:center;">Rp 3.000.000+</td>
+          <td style="text-align:center;">Rp 1.300.000+</td>
+          <td style="text-align:center;">Rp 3.300.000+</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="savings-box">
+      <div class="savings-left">
+        <h3>💰 Penghematan vs CS Manual</h3>
+        <p>Anda menghemat biaya gaji karyawan CS setiap bulannya tanpa mengorbankan kualitas layanan.</p>
+      </div>
+      <div class="savings-right">
+        <div class="savings-amount">Rp 2.772.000</div>
+        <div class="savings-label">Hemat per Bulan</div>
+      </div>
+    </div>
+
+    <div class="savings-box" style="background: linear-gradient(135deg, #0f3460, #1a1a2e);">
+      <div class="savings-left">
+        <h3>📊 Penghematan vs SaaS Chatbot</h3>
+        <p>Lebih hemat dibanding langganan platform chatbot SaaS seperti WATI atau Respond.io.</p>
+      </div>
+      <div class="savings-right">
+        <div class="savings-amount">Rp 1.072.000</div>
+        <div class="savings-label">Hemat per Bulan</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 6: RINCIAN BIAYA ===== -->
+  <section class="content-wrapper page-break">
+    <div class="section-label">Rincian</div>
+    <h2 class="section-title">Breakdown Biaya Rp 228.000/bulan</h2>
+    <p class="section-subtitle">Transparan dan tanpa biaya tersembunyi.</p>
+
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th style="width:40%">Komponen</th>
+          <th>Keterangan</th>
+          <th style="width:20%; text-align:right">Biaya/Bulan</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>☁️ VPS Cloud Server</strong></td>
+          <td>DigitalOcean / Contabo — 2vCPU, 4GB RAM, 80GB SSD</td>
+          <td class="cost-value">Rp 100.000</td>
+        </tr>
+        <tr>
+          <td><strong>🐳 WAHA (WhatsApp Gateway)</strong></td>
+          <td>Self-hosted, open source, tanpa biaya lisensi</td>
+          <td class="cost-value">Rp 0</td>
+        </tr>
+        <tr>
+          <td><strong>🤖 AI Engine (LLM)</strong></td>
+          <td>Gemini Flash-Lite API (~500 percakapan/bulan)</td>
+          <td class="cost-value">Rp 5.000</td>
+        </tr>
+        <tr>
+          <td><strong>🔴 Redis (Message Queue)</strong></td>
+          <td>Self-hosted di VPS, tanpa biaya tambahan</td>
+          <td class="cost-value">Rp 0</td>
+        </tr>
+        <tr>
+          <td><strong>📊 Google Sheets (Database)</strong></td>
+          <td>Google Sheets API — gratis hingga 500 req/100 detik</td>
+          <td class="cost-value">Rp 0</td>
+        </tr>
+        <tr>
+          <td><strong>🔧 Maintenance & Support</strong></td>
+          <td>Monitoring, update, dan troubleshooting bulanan</td>
+          <td class="cost-value">Rp 123.000</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2"><strong>TOTAL BIAYA BULANAN</strong></td>
+          <td class="cost-value" style="font-size:18px;"><strong>Rp 228.000</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="highlight-box">
+      <strong>📌 Catatan Penting:</strong><br>
+      • Tidak ada biaya setup awal yang besar — sistem sudah siap pakai.<br>
+      • Biaya AI hanya ~Rp 5.000/bulan karena menggunakan model ultra-efisien (Gemini Flash-Lite).<br>
+      • Jika volume pesan meningkat drastis (>2000 percakapan/bulan), biaya AI naik minimal ~Rp 10-15rb.<br>
+      • Tidak ada kontrak jangka panjang — bisa berhenti kapan saja.
+    </div>
+
+    <!-- ROI -->
+    <div class="divider"></div>
+    <h2 class="section-title">ROI (Return on Investment)</h2>
+    <p class="section-subtitle">Proyeksi dampak finansial dari penggunaan chatbot AI.</p>
+
+    <div class="roi-grid">
+      <div class="roi-card">
+        <div class="roi-value">92%</div>
+        <div class="roi-label">Hemat vs CS Manual</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-value">83%</div>
+        <div class="roi-label">Hemat vs SaaS</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-value">3x</div>
+        <div class="roi-label">Lebih Cepat Respon</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-value">+15</div>
+        <div class="roi-label">Tamu Terselamatkan/Bulan</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <strong>📈 Kalkulasi Sederhana:</strong><br>
+      Jika chatbot berhasil "menyelamatkan" <strong>15 tamu/bulan</strong> yang sebelumnya kabur karena slow-response, dengan rata-rata booking 1 malam @ Rp 200.000:
+      <br><br>
+      <strong>Revenue tambahan: 15 × Rp 200.000 = Rp 3.000.000/bulan</strong><br>
+      Biaya chatbot: Rp 228.000 → <strong>ROI = 13x lipat!</strong>
+    </div>
+  </section>
+
+  <!-- ===== CTA / CLOSING ===== -->
+  <section class="cta-section page-break">
+    <h2>Siap Meningkatkan Pelayanan<br>Penginapan Anda?</h2>
+    <p>Mulai dari Rp 228.000/bulan — lebih murah dari 1 malam menginap di hotel bintang 3.</p>
+
+    <div class="cta-contact">
+      <div class="cta-item">
+        <div class="cta-item-label">WhatsApp</div>
+        <div class="cta-item-value">+62 812-3456-789</div>
+      </div>
+      <div class="cta-item">
+        <div class="cta-item-label">Email</div>
+        <div class="cta-item-value">hello@losmenbahagia.com</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="doc-footer">
+    © 2026 Losmen Bahagia Tech — Dokumen ini bersifat konfidensial dan ditujukan hanya untuk pihak yang berkepentingan.
+  </div>
+
+</body>
+</html>
