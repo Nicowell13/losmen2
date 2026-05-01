@@ -242,7 +242,7 @@ async function processMessageLogic(userText, userPhone) {
   }
 
   // 3. Generate Respons Natural dengan LLM
-  const replyText = await llm.generateResponse(intent, userText, contextData);
+  const replyText = await llm.generateResponse(intent, userText, contextData, userPhone);
 
   const totalTime = Date.now() - startTime;
   console.log(`[Handler] Selesai proses (${totalTime}ms) untuk: ${userPhone}`);

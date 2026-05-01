@@ -2,6 +2,7 @@ const Queue = require('bull');
 const config = require('./config');
 const { processMessageLogic } = require('./handler');
 const { sendReply, sendPresence } = require('./waha');
+const memory = require('./memory');
 
 // Inisialisasi Queue
 // Menghubungkan ke Redis berdasarkan REDIS_URL
@@ -53,6 +54,10 @@ messageQueue.process(1, async (job, done) => {
   console.log(`\n[⚙️ Worker] Memproses pesan dari ${senderId}...`);
   
   try {
+    // 0. Simpan pesan user ke memory & reset timer auto-close
+    memory.addMessage(senderId, 'user', text);
+    memory.clearCloseTimer(senderId);
+
     // 1. Kasih efek 'typing...'
     await sendPresence(senderId);
 
@@ -69,14 +74,18 @@ messageQueue.process(1, async (job, done) => {
     // 3. Jalankan otak (NLU -> Data -> NLG)
     const reply = await processMessageLogic(text, senderId);
     
-    // 4. Kirim via WAHA
+    // 4. Kirim via WAHA & simpan balasan ke memory
     if (reply) {
       // Delay dikit anti-spam API
       await new Promise(r => setTimeout(r, 500));
       await sendReply(senderId, reply);
+      memory.addMessage(senderId, 'assistant', reply);
     }
+
+    // 5. Set timer auto-close (5 menit tidak aktif → kirim pesan penutup)
+    memory.setCloseTimer(senderId);
     
-    // 5. Tandai kerjaan selesai di Redis
+    // 6. Tandai kerjaan selesai di Redis
     done();
   } catch (error) {
     console.error('[⚙️ Worker Error]', error.message);

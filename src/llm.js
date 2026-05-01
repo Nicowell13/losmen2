@@ -1,5 +1,6 @@
 const axios = require('axios');
 const config = require('./config');
+const memory = require('./memory');
 
 /**
  * Panggil Ollama (Qwen 2.5 1.5B) dengan timeout protection.
@@ -73,8 +74,9 @@ Balas hanya satu kata intent saja, tanpa penjelasan.`;
 
 /**
  * Generate balasan natural layaknya CS WhatsApp.
+ * @param {string} userPhone - Nomor HP user untuk mengambil riwayat chat
  */
-async function generateResponse(intent, userText, dataContext) {
+async function generateResponse(intent, userText, dataContext, userPhone) {
   const losmenName = config.losmen.name;
 
   const csName = config.losmen.csName || 'Sari';
@@ -106,7 +108,10 @@ ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
     dataString = "[DATA]\n" + dataContext;
   }
 
-  const prompt = `${dataString ? dataString + '\n\n' : ''}Tamu: "${userText}"\nBalasan ${csName}:`;
+  // Ambil riwayat chat sebelumnya untuk konteks
+  const historyStr = memory.formatHistoryForLLM(userPhone);
+
+  const prompt = `${historyStr}${dataString ? dataString + '\n\n' : ''}Tamu: "${userText}"\nBalasan ${csName}:`;
 
 
   const response = await callOllama(prompt, systemPrompt, 0.2); // Turunkan temperature jadi 0.2 agar tidak halusinasi
