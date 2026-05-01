@@ -1,6 +1,19 @@
 const axios = require('axios');
+const crypto = require('crypto');
 const config = require('./config');
 const memory = require('./memory');
+
+// ============================================================
+// LLM Response Cache
+// Mengurangi beban Ollama untuk pertanyaan yang sering muncul
+// ============================================================
+const responseCache = new Map();
+const MAX_CACHE_SIZE = 200; // Simpan maksimal 200 respons unik
+
+function getCacheKey(historyStr, dataString, userText, intent) {
+  const raw = `${intent}||${historyStr}||${dataString}||${userText.trim().toLowerCase()}`;
+  return crypto.createHash('md5').update(raw).digest('hex');
+}
 
 /**
  * Panggil Ollama (Qwen 2.5 1.5B) dengan timeout protection.
@@ -111,6 +124,13 @@ ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
   // Ambil riwayat chat sebelumnya untuk konteks
   const historyStr = memory.formatHistoryForLLM(userPhone);
 
+  // Cek Cache
+  const cacheKey = getCacheKey(historyStr, dataString, userText, intent);
+  if (responseCache.has(cacheKey)) {
+    console.log(`[LLM Cache Hit] Menggunakan jawaban dari cache (Instan!)`);
+    return responseCache.get(cacheKey);
+  }
+
   const prompt = `${historyStr}${dataString ? dataString + '\n\n' : ''}Tamu: "${userText}"\nBalasan ${csName}:`;
 
 
@@ -128,7 +148,17 @@ ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
     return fallbacks[intent] || fallbacks.default;
   }
 
-  return response.trim().replace(/^"|"$/g, "");
+  const finalResponse = response.trim().replace(/^"|"$/g, "");
+
+  // Simpan ke Cache
+  if (responseCache.size >= MAX_CACHE_SIZE) {
+    // Hapus 50 item terlama jika penuh
+    const keys = Array.from(responseCache.keys());
+    for(let i=0; i<50; i++) responseCache.delete(keys[i]);
+  }
+  responseCache.set(cacheKey, finalResponse);
+
+  return finalResponse;
 }
 
 module.exports = {
