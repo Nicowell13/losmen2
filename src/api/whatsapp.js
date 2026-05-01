@@ -111,7 +111,7 @@ router.post('/start', async (req, res) => {
       config: {
         webhooks: [
           {
-            url: `http://localhost:${process.env.PORT || 3001}/webhook`,
+            url: `http://host.docker.internal:${process.env.PORT || 3001}/webhook`,
             events: ['message'],
           }
         ],
@@ -163,7 +163,7 @@ router.post('/restart', async (req, res) => {
       config: {
         webhooks: [
           {
-            url: `http://localhost:${process.env.PORT || 3001}/webhook`,
+            url: `http://host.docker.internal:${process.env.PORT || 3001}/webhook`,
             events: ['message'],
           }
         ],
