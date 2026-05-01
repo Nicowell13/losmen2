@@ -44,36 +44,60 @@ router.get('/status', async (req, res) => {
 
 /**
  * GET /api/whatsapp/qr — Ambil QR Code untuk scan
+ * Coba beberapa endpoint WAHA untuk mendapatkan QR code langsung (bukan screenshot)
  */
 router.get('/qr', async (req, res) => {
+  const session = config.waha.session;
+
+  // Daftar endpoint QR yang mungkin (berbeda versi WAHA)
+  const qrEndpoints = [
+    `/api/${session}/auth/qr`,                  // WAHA v1
+    `/api/sessions/${session}/auth/qr`,          // WAHA v2+
+  ];
+
+  // Coba setiap endpoint QR
+  for (const endpoint of qrEndpoints) {
+    try {
+      // Coba sebagai JSON (base64 response)
+      const { data } = await wahaApi.get(endpoint, { responseType: 'json' });
+
+      if (data && data.data) {
+        return res.json({
+          qr: `data:${data.mimetype || 'image/png'};base64,${data.data}`,
+          type: 'qr',
+        });
+      }
+    } catch (e) {
+      // Coba sebagai raw image
+      try {
+        const imgRes = await wahaApi.get(endpoint, { responseType: 'arraybuffer' });
+        if (imgRes.data && imgRes.data.byteLength > 100) {
+          const base64 = Buffer.from(imgRes.data, 'binary').toString('base64');
+          const contentType = imgRes.headers['content-type'] || 'image/png';
+          return res.json({
+            qr: `data:${contentType};base64,${base64}`,
+            type: 'qr',
+          });
+        }
+      } catch (e2) { /* lanjut ke endpoint berikutnya */ }
+    }
+  }
+
+  // Fallback terakhir: screenshot (full page — akan di-crop oleh frontend)
   try {
-    // Coba endpoint QR code langsung
-    const { data } = await wahaApi.get(`/api/sessions/${config.waha.session}/auth/qr`, {
-      responseType: 'json',
+    const screenshotRes = await wahaApi.get('/api/screenshot', {
+      params: { session },
+      responseType: 'arraybuffer',
     });
 
-    // WAHA returns { mimetype: "image/png", data: "base64..." }
-    if (data && data.data) {
-      return res.json({
-        qr: `data:${data.mimetype || 'image/png'};base64,${data.data}`,
-      });
-    }
-
-    res.json({ qr: null, message: 'QR belum tersedia.' });
-  } catch (err) {
-    // Fallback: coba screenshot endpoint
-    try {
-      const screenshotRes = await wahaApi.get('/api/screenshot', {
-        params: { session: config.waha.session },
-        responseType: 'arraybuffer',
-      });
-
-      const base64 = Buffer.from(screenshotRes.data, 'binary').toString('base64');
-      const contentType = screenshotRes.headers['content-type'] || 'image/png';
-      return res.json({ qr: `data:${contentType};base64,${base64}` });
-    } catch (screenshotErr) {
-      res.json({ qr: null, message: 'QR tidak tersedia. Pastikan sesi dalam status SCAN_QR_CODE.' });
-    }
+    const base64 = Buffer.from(screenshotRes.data, 'binary').toString('base64');
+    const contentType = screenshotRes.headers['content-type'] || 'image/png';
+    return res.json({
+      qr: `data:${contentType};base64,${base64}`,
+      type: 'screenshot', // Frontend tahu ini screenshot, bukan QR murni
+    });
+  } catch (screenshotErr) {
+    res.json({ qr: null, message: 'QR tidak tersedia.' });
   }
 });
 

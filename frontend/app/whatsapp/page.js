@@ -16,6 +16,7 @@ export default function WhatsAppPage() {
   const router = useRouter();
   const [status, setStatus] = useState(null);
   const [qrImage, setQrImage] = useState(null);
+  const [qrType, setQrType] = useState('qr');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState("");
   const [toast, setToast] = useState(null);
@@ -80,6 +81,7 @@ export default function WhatsAppPage() {
       const data = await getWhatsAppQR();
       if (data.qr) {
         setQrImage(data.qr);
+        setQrType(data.type || 'screenshot');
       }
     } catch (err) {
       console.error("QR fetch error:", err);
@@ -238,7 +240,20 @@ export default function WhatsAppPage() {
             <div className="qr-body">
               {qrImage ? (
                 <div className="qr-wrapper">
-                  <img src={qrImage} alt="WhatsApp QR Code" className="qr-image" />
+                  <img
+                    src={qrImage}
+                    alt="WhatsApp QR Code"
+                    className={`qr-image ${qrType === 'screenshot' ? 'qr-screenshot' : 'qr-clean'}`}
+                  />
+                  {qrType === 'screenshot' && (
+                    <p className="qr-hint" style={{ color: 'var(--warning)' }}>
+                      ⚠️ Menampilkan screenshot WAHA. Untuk QR yang lebih besar, buka langsung:<br/>
+                      <a href="http://206.189.146.134:3000" target="_blank" rel="noopener"
+                         style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+                        http://206.189.146.134:3000
+                      </a>
+                    </p>
+                  )}
                   <p className="qr-hint">QR code auto-refresh setiap 5 detik</p>
                 </div>
               ) : (
@@ -374,13 +389,22 @@ export default function WhatsAppPage() {
             text-align: center;
           }
           .qr-image {
-            width: 300px;
-            height: 300px;
             border-radius: 12px;
             border: 3px solid var(--accent);
             background: white;
-            padding: 12px;
             object-fit: contain;
+          }
+          .qr-clean {
+            width: 420px;
+            height: 420px;
+            padding: 20px;
+            image-rendering: pixelated;
+          }
+          .qr-screenshot {
+            width: 100%;
+            max-width: 700px;
+            height: auto;
+            padding: 8px;
           }
           .qr-hint {
             margin-top: 12px;
@@ -437,9 +461,12 @@ export default function WhatsAppPage() {
               border-right: none;
               border-bottom: 1px solid var(--border);
             }
-            .qr-image {
-              width: 250px;
-              height: 250px;
+            .qr-clean {
+              width: 320px;
+              height: 320px;
+            }
+            .qr-screenshot {
+              max-width: 100%;
             }
           }
         `}</style>
