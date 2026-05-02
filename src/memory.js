@@ -55,11 +55,10 @@ function formatHistoryForLLM(userPhone) {
   if (previousMessages.length === 0) return '';
 
   const formatted = previousMessages.map(msg => {
-    const label = msg.role === 'user' ? 'Tamu' : config.losmen.csName;
-    return `${label}: "${msg.content}"`;
+    return `[${msg.role === 'user' ? 'Tamu' : 'Kamu (CS)'}]: ${msg.content}`;
   }).join('\n');
 
-  return `[RIWAYAT CHAT SEBELUMNYA (${previousMessages.length} pesan)]\n${formatted}\n\n`;
+  return `--- RIWAYAT CHAT SEBELUMNYA ---\n${formatted}\n-----------------------------\n\n`;
 }
 
 /**

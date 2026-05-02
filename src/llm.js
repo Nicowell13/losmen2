@@ -97,28 +97,26 @@ async function generateResponse(intent, userText, dataContext, userPhone) {
   const systemPrompt = `Kamu adalah ${csName}, Customer Service WhatsApp di "${losmenName}" (penginapan).
 Kamu wanita 25 tahun yang ramah, sopan, dan persuasif. Bahasa casual tapi sopan.
 
-ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
+ATURAN SUPER KETAT:
 1. Jawab MAKSIMAL 3-4 kalimat. Terlalu panjang akan ditolak.
 2. JIKA ADA [DATA KAMAR] ATAU [DATA], JANGAN MENGARANG HARGA/KETERSEDIAAN. Sebutkan harga dan status persis sama dengan data yang diberikan!
 3. Jika ditanya ketersediaan tapi ada kamar yang PENUH, sampaikan maaf untuk tipe tersebut lalu tawarkan tipe lain yang tersedia.
-4. Akhiri dengan pertanyaan persuasif (contoh: "Mau booking di tanggal berapa Kak?").
-5. Tanda tangani dengan "- ${csName} 💛" di baris baru paling bawah.
-6. Selalu persuasif — ajak tamu untuk booking/menginap dengan cara halus.
-7. Akhiri dengan pertanyaan balik agar tamu tetap engaged.
-8. Tanda tangani dengan "- ${csName} 💛" di akhir pesan.`;
+4. JANGAN PERNAH membuat percakapan palsu. JANGAN MENGETIK kata "Tamu:" atau "${csName}:" di jawabanmu. Langsung tulis isi pesan balasanmu saja.
+5. Akhiri pesan dengan pertanyaan persuasif (contoh: "Mau booking di tanggal berapa Kak?").
+6. Tanda tangani dengan "- ${csName} 💛" di baris baru paling bawah.`;
 
   let dataString = "";
 
   if (Array.isArray(dataContext) && dataContext.length > 0) {
-    dataString = "[DATA KAMAR]\n" + dataContext.map(k => {
+    dataString = "--- DATA KAMAR SAAT INI ---\n" + dataContext.map(k => {
       if (k.tersedia > 0) {
         return `> Kamar ${k.tipe}: TERSEDIA (${k.tersedia} kamar). Harga: Rp${k.harga.toLocaleString('id-ID')} per malam. Fasilitas: ${k.fasilitas}`;
       } else {
         return `> Kamar ${k.tipe}: FULL/PENUH. Jangan ditawarkan.`;
       }
-    }).join('\n');
+    }).join('\n') + "\n---------------------------";
   } else if (typeof dataContext === 'string') {
-    dataString = "[DATA]\n" + dataContext;
+    dataString = "--- INFORMASI ---\n" + dataContext + "\n-----------------";
   }
 
   // Ambil riwayat chat sebelumnya untuk konteks
@@ -131,7 +129,7 @@ ATURAN SUPER KETAT (WAJIB DIIKUTI TEPAT):
     return responseCache.get(cacheKey);
   }
 
-  const prompt = `${historyStr}${dataString ? dataString + '\n\n' : ''}Tamu: "${userText}"\nBalasan ${csName}:`;
+  const prompt = `${historyStr}${dataString ? dataString + '\n\n' : ''}PESAN TAMU SAAT INI:\n"${userText}"\n\nTULIS BALASANMU SEKARANG:`;
 
 
   const response = await callOllama(prompt, systemPrompt, 0.2); // Turunkan temperature jadi 0.2 agar tidak halusinasi
