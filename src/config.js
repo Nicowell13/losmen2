@@ -3,8 +3,8 @@ require('dotenv').config();
 module.exports = {
   // Info Losmen
   losmen: {
-    name: process.env.LOSMEN_NAME || 'Losmen',
-    address: process.env.LOSMEN_ADDRESS || 'Belum diset',
+    name: process.env.LOSMEN_NAME || 'Magnolia Mansion',
+    address: process.env.LOSMEN_ADDRESS || 'Jl. Komando Raya No.18, RT.8/RW.3, Kuningan, Karet, Kecamatan Setiabudi, JAKARTA, Daerah Khusus Ibukota Jakarta 12920',
     mapsLink: process.env.LOSMEN_MAPS_LINK || '',
     phone: process.env.LOSMEN_PHONE || '',
     csName: process.env.CS_NAME || 'Sari',

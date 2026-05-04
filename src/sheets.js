@@ -183,7 +183,7 @@ function countActiveBookings(targetDate) {
     ci.setHours(0, 0, 0, 0);
     co.setHours(0, 0, 0, 0);
 
-    // Tamu menginap dari check-in sampai sebelum check-out
+    // Tamu ngekos dari check-in sampai sebelum check-out
     if (target >= ci && target < co) {
       const tipe = b.tipeKamar.trim();
       counts[tipe] = (counts[tipe] || 0) + 1;
@@ -235,7 +235,7 @@ function getWeeklyAvailability(startDate) {
 
     const summary = availability.map(k => {
       if (k.tersedia > 0) {
-        return `  • ${k.tipe}: ${k.tersedia}/${k.totalKamar} kamar kosong (Rp${k.harga.toLocaleString('id-ID')}/malam)`;
+        return `  • ${k.tipe}: ${k.tersedia}/${k.totalKamar} kamar kosong (Rp${k.harga.toLocaleString('id-ID')}/bulan)`;
       } else {
         return `  • ${k.tipe}: PENUH`;
       }

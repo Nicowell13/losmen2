@@ -55,7 +55,7 @@ async function detectIntent(userText) {
   const keywordMap = {
     tanya_harga: ['harga', 'berapa', 'tarif', 'biaya', 'rate', 'price', 'murah', 'mahal', 'diskon', 'promo'],
     tanya_ketersediaan: ['kosong', 'available', 'tersedia', 'ada kamar', 'booking', 'pesan kamar', 'book', 'sedia', 'penuh'],
-    booking: ['booking', 'pesan', 'reservasi', 'book', 'daftar', 'form', 'check in', 'checkin', 'mau kamar', 'ambil kamar', 'mau nginap', 'mau menginap'],
+    booking: ['booking', 'pesan', 'reservasi', 'book', 'daftar', 'form', 'check in', 'checkin', 'mau kamar', 'ambil kamar', 'mau ngekos', 'ngekos'],
     faq_lokasi: ['lokasi', 'alamat', 'dimana', 'di mana', 'maps', 'arah', 'jalan ke', 'posisi'],
     faq_fasilitas: ['fasilitas', 'ac', 'wifi', 'parkir', 'sarapan', 'breakfast', 'kolam', 'facility'],
     faq_checkin: ['jam masuk', 'jam keluar', 'checkout', 'check out'],
@@ -69,7 +69,7 @@ async function detectIntent(userText) {
   }
 
   // ====== TAHAP 2: LLM Fallback (Jika keyword tidak cocok) ======
-  const systemPrompt = `Anda adalah NLU AI untuk sistem penginapan/losmen.
+  const systemPrompt = `Anda adalah NLU AI untuk sistem kos-kosan.
 Tugas: deteksi intent dari pesan user.
 Pilih SATU dari: tanya_harga, tanya_ketersediaan, booking, faq_lokasi, faq_fasilitas, faq_checkin, greeting, lainnya.
 Balas hanya satu kata intent saja, tanpa penjelasan.`;
@@ -94,7 +94,7 @@ async function generateResponse(intent, userText, dataContext, userPhone) {
 
   const csName = config.losmen.csName || 'Sari';
 
-  const systemPrompt = `Kamu adalah ${csName}, Customer Service WhatsApp di "${losmenName}" (penginapan).
+  const systemPrompt = `Kamu adalah ${csName}, Customer Service WhatsApp di "${losmenName}" (kos-kosan).
 Kamu wanita 25 tahun yang ramah, sopan, dan persuasif. Bahasa casual tapi sopan.
 
 ATURAN SUPER KETAT:
@@ -110,7 +110,7 @@ ATURAN SUPER KETAT:
   if (Array.isArray(dataContext) && dataContext.length > 0) {
     dataString = "--- DATA KAMAR SAAT INI ---\n" + dataContext.map(k => {
       if (k.tersedia > 0) {
-        return `> Kamar ${k.tipe}: TERSEDIA (${k.tersedia} kamar). Harga: Rp${k.harga.toLocaleString('id-ID')} per malam. Fasilitas: ${k.fasilitas}`;
+        return `> Kamar ${k.tipe}: TERSEDIA (${k.tersedia} kamar). Harga: Rp${k.harga.toLocaleString('id-ID')} per bulan. Fasilitas: ${k.fasilitas}`;
       } else {
         return `> Kamar ${k.tipe}: FULL/PENUH. Jangan ditawarkan.`;
       }

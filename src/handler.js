@@ -171,7 +171,7 @@ async function processMessageLogic(userText, userPhone) {
         contextData = `[KETERSEDIAAN TANGGAL ${tanggalStr} (${dateInfo.label})]\n` +
           availability.map(k => {
             if (k.tersedia > 0) {
-              return `> Kamar ${k.tipe}: TERSEDIA ${k.tersedia} dari ${k.totalKamar} kamar. Harga: Rp${k.harga.toLocaleString('id-ID')}/malam. Fasilitas: ${k.fasilitas}`;
+              return `> Kamar ${k.tipe}: TERSEDIA ${k.tersedia} dari ${k.totalKamar} kamar. Harga: Rp${k.harga.toLocaleString('id-ID')}/bulan. Fasilitas: ${k.fasilitas}`;
             } else {
               return `> Kamar ${k.tipe}: PENUH (semua ${k.totalKamar} kamar terisi). Jangan ditawarkan.`;
             }
@@ -219,7 +219,7 @@ async function processMessageLogic(userText, userPhone) {
           contextData = `[DATA KETERSEDIAAN UNTUK BOOKING TANGGAL ${tanggalStr}]\n` +
             availability.map(k => {
               if (k.tersedia > 0) {
-                return `> Kamar ${k.tipe}: TERSEDIA ${k.tersedia} kamar. Harga: Rp${k.harga.toLocaleString('id-ID')}/malam.`;
+                return `> Kamar ${k.tipe}: TERSEDIA ${k.tersedia} kamar. Harga: Rp${k.harga.toLocaleString('id-ID')}/bulan.`;
               } else {
                 return `> Kamar ${k.tipe}: PENUH.`;
               }
@@ -230,7 +230,7 @@ async function processMessageLogic(userText, userPhone) {
         }
       } else {
         if (formLink) {
-          return `Wah senangnya Kakak mau menginap di *${config.losmen.name}*! 🥰\n\nUntuk reservasi, silakan isi formulir booking di link berikut ya Kak:\n👉 ${formLink}\n\nSetelah Kakak isi, aku akan konfirmasi langsung lewat chat ini ya. Kalau ada pertanyaan, jangan ragu bilang aja! 😊\n- ${config.losmen.csName} 💛`;
+          return `Wah senangnya Kakak tertarik untuk ngekos di *${config.losmen.name}*! 🥰\n\nUntuk reservasi/pendaftaran, silakan isi formulir di link berikut ya Kak:\n👉 ${formLink}\n\nSetelah Kakak isi, aku akan konfirmasi langsung lewat chat ini ya. Kalau ada pertanyaan, jangan ragu bilang aja! 😊\n- ${config.losmen.csName} 💛`;
         }
         contextData = 'Tamu ingin melakukan booking/reservasi kamar.';
       }

@@ -19,7 +19,7 @@ const HEAVY_KEYWORDS = [
   // harga
   'harga', 'berapa', 'tarif', 'biaya', 'rate', 'price',
   // booking
-  'booking', 'pesan', 'reservasi', 'book', 'mau kamar', 'mau nginap', 'mau menginap',
+  'booking', 'pesan', 'reservasi', 'book', 'mau kamar', 'mau ngekos', 'mau sewa',
   // fasilitas
   'fasilitas', 'ac', 'wifi', 'parkir', 'sarapan'
 ];
