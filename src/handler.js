@@ -160,77 +160,96 @@ async function processMessageLogic(userText, userPhone) {
   const intent = await llm.detectIntent(userText);
   console.log(`[Handler] Intent: ${intent} (${Date.now() - startTime}ms)`);
 
-  // 2. Ambil Data dari Cache Sheets
-  let contextData = [];
+  // 2. Handle per intent — Template langsung untuk data faktual (tanpa LLM)
+  const csName = config.losmen.csName || 'Sari';
 
   switch (intent) {
-    case 'tanya_harga':
-      contextData = sheets.getAvailabilityData();
-      break;
+    // ---- HARGA: Template langsung, tidak perlu LLM ----
+    case 'tanya_harga': {
+      const kamarList = sheets.getAvailabilityData();
+      let hargaInfo = kamarList.map(k =>
+        `🏠 *${k.tipe}*\n   💰 Rp${k.harga.toLocaleString('id-ID')}/bulan\n   📦 ${k.fasilitas}`
+      ).join('\n\n');
 
+      return `Berikut daftar harga kamar kos *${config.losmen.name}* ya Kak:\n\n${hargaInfo}\n\n💳 Deposit: Rp 1.500.000 (refundable)\n📐 Ukuran kamar: 6 x 4 meter\n⚡ Listrik: Token prabayar\n\nMau langsung booking Kak? Ketik *booking* ya! 😊\n- ${csName} 💛`;
+    }
+
+    // ---- KETERSEDIAAN: Template langsung ----
     case 'tanya_ketersediaan': {
-      // Coba ekstrak tanggal dari pesan user
       const dateInfo = extractDateFromText(userText);
 
       if (dateInfo) {
-        // User menanyakan tanggal spesifik → cek ketersediaan per tanggal
         const availability = sheets.getAvailabilityByDate(dateInfo.date);
         const tanggalStr = sheets.formatDate(dateInfo.date);
-        contextData = `[KETERSEDIAAN TANGGAL ${tanggalStr} (${dateInfo.label})]\n` +
-          availability.map(k => {
-            if (k.tersedia > 0) {
-              return `> Kamar ${k.tipe}: TERSEDIA ${k.tersedia} dari ${k.totalKamar} kamar. Harga: Rp${k.harga.toLocaleString('id-ID')}/bulan. Fasilitas: ${k.fasilitas}`;
-            } else {
-              return `> Kamar ${k.tipe}: PENUH (semua ${k.totalKamar} kamar terisi). Jangan ditawarkan.`;
-            }
-          }).join('\n');
-        console.log(`[Handler] Cek ketersediaan tanggal: ${tanggalStr}`);
+        let availInfo = availability.map(k => {
+          if (k.tersedia > 0) {
+            return `✅ *${k.tipe}*: ${k.tersedia} kamar tersedia (Rp${k.harga.toLocaleString('id-ID')}/bulan)`;
+          } else {
+            return `❌ *${k.tipe}*: PENUH`;
+          }
+        }).join('\n');
+
+        const adaKosong = availability.some(k => k.tersedia > 0);
+        const footer = adaKosong
+          ? `\nMau langsung booking Kak? Ketik *booking* ya! 😊`
+          : `\nMohon maaf semua kamar penuh pada tanggal tersebut. Coba tanya tanggal lain ya Kak 🙏`;
+
+        return `📅 Ketersediaan kamar tanggal *${tanggalStr}* (${dateInfo.label}):\n\n${availInfo}${footer}\n- ${csName} 💛`;
       } else {
-        // Tidak ada tanggal spesifik → tampilkan kalender 1 minggu ke depan
-        const weeklyData = sheets.getWeeklyAvailability();
-        contextData = `[KALENDER KETERSEDIAAN 7 HARI KE DEPAN]\n${weeklyData}`;
-        console.log(`[Handler] Tampilkan kalender 1 minggu`);
+        // Tampilkan ketersediaan hari ini
+        const availability = sheets.getAvailabilityData();
+        let availInfo = availability.map(k => {
+          if (k.tersedia > 0) {
+            return `✅ *${k.tipe}*: ${k.tersedia} kamar tersedia (Rp${k.harga.toLocaleString('id-ID')}/bulan)`;
+          } else {
+            return `❌ *${k.tipe}*: PENUH`;
+          }
+        }).join('\n');
+
+        return `🏠 Ketersediaan kamar *${config.losmen.name}* saat ini:\n\n${availInfo}\n\nKakak bisa tanya ketersediaan per tanggal juga, contoh: "ada kamar tanggal 15?"\n\nMau langsung booking? Ketik *booking* ya! 😊\n- ${csName} 💛`;
       }
-      break;
     }
 
+    // ---- LOKASI: Template langsung ----
     case 'faq_lokasi':
-      contextData = `${config.losmen.name} berlokasi di ${config.losmen.address}.\nLink Google Maps: ${config.losmen.mapsLink}`;
-      break;
+      return `📍 *${config.losmen.name}* berlokasi di:\n${config.losmen.address}\n\n${config.losmen.mapsLink ? `🗺️ Google Maps: ${config.losmen.mapsLink}` : ''}\n\nAda yang lain bisa aku bantu Kak? 😊\n- ${csName} 💛`;
 
+    // ---- FASILITAS: Template langsung ----
     case 'faq_fasilitas': {
       const allRooms = sheets.getAvailabilityData();
-      contextData = allRooms.map(k => `- ${k.tipe}: ${k.fasilitas}`).join('\n');
-      break;
+      let fasInfo = allRooms.map(k =>
+        `🏠 *${k.tipe}* — Rp${k.harga.toLocaleString('id-ID')}/bulan\n   📦 ${k.fasilitas}`
+      ).join('\n\n');
+
+      return `Fasilitas kamar kos *${config.losmen.name}*:\n\n${fasInfo}\n\n📐 Ukuran: 6 x 4 meter (luas!)\n⚡ Listrik: Token prabayar\n🧺 Laundry: Tersedia layanan antar-jemput langganan\n\nTertarik Kak? Ketik *booking* untuk daftar! 😊\n- ${csName} 💛`;
     }
 
+    // ---- CHECK-IN: Template langsung ----
     case 'faq_checkin': {
       const info = sheets.getInfoData();
-      contextData = info['checkin'] || 'Check-in: 14:00, Check-out: 12:00';
-      break;
+      const checkinInfo = info['checkin'] || 'Flexible — hubungi admin untuk jadwal check-in/check-out';
+      return `⏰ Info check-in/check-out:\n${checkinInfo}\n\nAda yang lain bisa aku bantu Kak? 😊\n- ${csName} 💛`;
     }
 
+    // ---- GREETING: Template langsung ----
     case 'greeting':
-      return `Haii Kak! 😊 Ada yang bisa aku bantu? Tanya aja soal harga, ketersediaan, atau langsung booking ya!\n- ${config.losmen.csName} 💛`;
+      return `Haii Kak! 😊 Ada yang bisa aku bantu? Tanya aja soal harga, ketersediaan, atau langsung booking ya!\n- ${csName} 💛`;
 
+    // ---- BOOKING: Mulai booking flow interaktif ----
     case 'booking': {
-      // Mulai booking flow interaktif via chat
       const reply = booking.startBookingFlow(userPhone);
       console.log(`[Handler] Booking flow dimulai untuk: ${userPhone}`);
       return reply;
     }
 
-    default:
-      contextData = [];
+    // ---- LAINNYA: Hanya ini yang pakai LLM ----
+    default: {
+      const replyText = await llm.generateResponse(intent, userText, [], userPhone);
+      const totalTime = Date.now() - startTime;
+      console.log(`[Handler] LLM response (${totalTime}ms) untuk: ${userPhone}`);
+      return replyText;
+    }
   }
-
-  // 3. Generate Respons Natural dengan LLM
-  const replyText = await llm.generateResponse(intent, userText, contextData, userPhone);
-
-  const totalTime = Date.now() - startTime;
-  console.log(`[Handler] Selesai proses (${totalTime}ms) untuk: ${userPhone}`);
-
-  return replyText;
 }
 
 module.exports = {
