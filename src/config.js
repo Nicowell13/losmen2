@@ -8,6 +8,7 @@ module.exports = {
     mapsLink: process.env.LOSMEN_MAPS_LINK || '',
     phone: process.env.LOSMEN_PHONE || '',
     csName: process.env.CS_NAME || 'Sari',
+    csBookingPhone: process.env.CS_BOOKING_PHONE || '',
     bookingFormLink: process.env.BOOKING_FORM_LINK || ''
   },
 

@@ -31,7 +31,7 @@ export default function LoginPage() {
         <div className="login-card">
           <div className="login-brand">
             <div className="brand-icon">🏨</div>
-            <h1>Losmen Bahagia</h1>
+            <h1>Magnolia Mansion</h1>
             <p>Admin Panel — Kelola Penginapan Anda</p>
           </div>
 
@@ -76,7 +76,7 @@ export default function LoginPage() {
         </div>
 
         <p style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "var(--text-muted)" }}>
-          © 2026 Losmen Bahagia — Admin Panel
+          © 2026 Magnolia Mansion — Admin Panel
         </p>
       </div>
     </div>

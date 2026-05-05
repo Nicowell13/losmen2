@@ -18,7 +18,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <h1>🏨 Losmen Bahagia</h1>
+        <h1>🏠 Magnolia Mansion</h1>
         <p>Admin: {admin?.username || "admin"}</p>
       </div>
 

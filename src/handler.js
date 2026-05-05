@@ -1,6 +1,7 @@
 const llm = require('./llm');
 const sheets = require('./db'); // PostgreSQL (same interface as old sheets.js)
 const config = require('./config');
+const booking = require('./booking');
 
 // ============================================================
 // Anti-Spam: Cooldown 3 detik per user
@@ -137,6 +138,13 @@ async function processMessageLogic(userText, userPhone) {
 
   const startTime = Date.now();
 
+  // --- Cek apakah user sedang dalam booking flow ---
+  if (booking.isInBookingFlow(userPhone)) {
+    const reply = await booking.processBookingStep(userPhone, userText);
+    console.log(`[Handler] Booking flow step (${Date.now() - startTime}ms) untuk: ${userPhone}`);
+    return reply;
+  }
+
   // --- Greeting untuk tamu baru ---
   if (!greetedUsers.has(userPhone)) {
     greetedUsers.add(userPhone);
@@ -206,35 +214,10 @@ async function processMessageLogic(userText, userPhone) {
       return `Haii Kak! 😊 Ada yang bisa aku bantu? Tanya aja soal harga, ketersediaan, atau langsung booking ya!\n- ${config.losmen.csName} 💛`;
 
     case 'booking': {
-      // Cek ketersediaan pada tanggal yang diminta untuk booking
-      const dateInfo = extractDateFromText(userText);
-      const formLink = config.losmen.bookingFormLink;
-
-      if (dateInfo) {
-        const availability = sheets.getAvailabilityByDate(dateInfo.date);
-        const tanggalStr = sheets.formatDate(dateInfo.date);
-        const adaKosong = availability.some(k => k.tersedia > 0);
-
-        if (adaKosong) {
-          contextData = `[DATA KETERSEDIAAN UNTUK BOOKING TANGGAL ${tanggalStr}]\n` +
-            availability.map(k => {
-              if (k.tersedia > 0) {
-                return `> Kamar ${k.tipe}: TERSEDIA ${k.tersedia} kamar. Harga: Rp${k.harga.toLocaleString('id-ID')}/bulan.`;
-              } else {
-                return `> Kamar ${k.tipe}: PENUH.`;
-              }
-            }).join('\n') +
-            (formLink ? `\n\n[LINK BOOKING]: ${formLink}` : '');
-        } else {
-          contextData = `[SEMUA KAMAR PENUH TANGGAL ${tanggalStr}]\nSemua tipe kamar penuh pada tanggal ini. Sarankan tanggal lain.`;
-        }
-      } else {
-        if (formLink) {
-          return `Wah senangnya Kakak tertarik untuk ngekos di *${config.losmen.name}*! 🥰\n\nUntuk reservasi/pendaftaran, silakan isi formulir di link berikut ya Kak:\n👉 ${formLink}\n\nSetelah Kakak isi, aku akan konfirmasi langsung lewat chat ini ya. Kalau ada pertanyaan, jangan ragu bilang aja! 😊\n- ${config.losmen.csName} 💛`;
-        }
-        contextData = 'Tamu ingin melakukan booking/reservasi kamar.';
-      }
-      break;
+      // Mulai booking flow interaktif via chat
+      const reply = booking.startBookingFlow(userPhone);
+      console.log(`[Handler] Booking flow dimulai untuk: ${userPhone}`);
+      return reply;
     }
 
     default:
