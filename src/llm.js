@@ -54,8 +54,8 @@ async function detectIntent(userText) {
   // ====== TAHAP 1: Keyword Matching (Instan, 0ms) ======
   const keywordMap = {
     tanya_harga: ['harga', 'berapa', 'tarif', 'biaya', 'rate', 'price', 'murah', 'mahal', 'diskon', 'promo'],
-    tanya_ketersediaan: ['kosong', 'available', 'tersedia', 'ada kamar', 'booking', 'pesan kamar', 'book', 'sedia', 'penuh'],
     booking: ['booking', 'pesan', 'reservasi', 'book', 'daftar', 'form', 'check in', 'checkin', 'mau kamar', 'ambil kamar', 'mau ngekos', 'ngekos'],
+    tanya_ketersediaan: ['kosong', 'available', 'tersedia', 'ada kamar', 'sedia', 'penuh', 'kamar kosong'],
     faq_lokasi: ['lokasi', 'alamat', 'dimana', 'di mana', 'maps', 'arah', 'jalan ke', 'posisi'],
     faq_fasilitas: ['fasilitas', 'ac', 'wifi', 'parkir', 'sarapan', 'breakfast', 'kolam', 'facility'],
     faq_checkin: ['jam masuk', 'jam keluar', 'checkout', 'check out'],
